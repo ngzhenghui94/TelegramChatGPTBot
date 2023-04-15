@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "chatgpt": "^5.1.2",
+    "dotenv": "^16.0.3",
+    "node-telegram-bot-api": "^0.61.0"
+  },
+  "type": "module",
+  "name": "openai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ngzhenghui94/telegramChatGPT.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ngzhenghui94/telegramChatGPT/issues"
+  },
+  "homepage": "https://github.com/ngzhenghui94/telegramChatGPT#readme",
+  "description": ""
+}
