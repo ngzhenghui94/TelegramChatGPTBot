@@ -2,7 +2,7 @@ import { ChatGPTAPI } from 'chatgpt'
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
-import rateLimit from "./src/rateLimit.js"
+import {rateLimit} from "./src/rateLimit.js"
 moment.tz.setDefault("Asia/Singapore");
 dotenv.config()
 
@@ -13,8 +13,9 @@ const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
 //Disable if you dont want to log. 
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 
+
 const api = new ChatGPTAPI({
-    apiKey: process.env.APIKEY,
+    apiKey: process.env.OPENAPIKEY,
     // debug: true,
     temperature: 1.4,
     promptPrefix: "",
@@ -22,7 +23,6 @@ const api = new ChatGPTAPI({
 
 let idArray = []
 let objArray = {}
-
 
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {

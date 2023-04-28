@@ -1,9 +1,14 @@
+import dotenv from "dotenv";
+import TelegramBot from "node-telegram-bot-api";
+dotenv.config()
+
+const logger = new TelegramBot(process.env.LOGAPIKEY)
 const userRequests = {};
 
-rateLimit((userId) => {
+export const rateLimit = (userId) => {
     const rateLimitRequests = 5
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
-    logger.sendMessage("Rate Limit Tracker: " + JSON.stringify(userRequests))
+    // if (logger) logger.sendMessage("Rate Limit Tracker: " + JSON.stringify(userRequests))
     if (!userRequests[userId]) {
         userRequests[userId] = { count: 1, startTime: Date.now() };
         return false;
@@ -25,6 +30,4 @@ rateLimit((userId) => {
             return false;
         }
     }
-});
-
-module.exports = rateLimit;
+}
