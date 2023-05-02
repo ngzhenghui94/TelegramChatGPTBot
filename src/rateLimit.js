@@ -4,11 +4,15 @@ dotenv.config()
 
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 const userRequests = {};
+const telegramAdminId = process.env.ADMINID
 
 export const rateLimit = (userId) => {
+    if (userId == telegramAdminId){
+        return false
+    }
     const rateLimitRequests = 5
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
-    // if (logger) logger.sendMessage("Rate Limit Tracker: " + JSON.stringify(userRequests))
+    logger.sendMessage("Rate Limit Tracker: " + JSON.stringify(userRequests))
     if (!userRequests[userId]) {
         userRequests[userId] = { count: 1, startTime: Date.now() };
         return false;
