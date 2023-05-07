@@ -29,7 +29,6 @@ bot.on('message', async (msg) => {
 
     if (await rateLimit(msg.chat.id)) {
         await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 6 questions please wait 10 minute. Please wait and try again later.");
-        await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
         return;
     }
 
@@ -45,18 +44,16 @@ bot.on('message', async (msg) => {
     if (idArray.includes(msg.chat.id)) {
         try {
             if (msgContent) {
-                await api.sendMessage(msgContent + " (Reply in English)", {
+                await api.sendMessage(`${msgContent} (Reply in English)`, {
                     parentMessageId: objArray[msg.chat.id][0],
                     // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).then(async (res) => {
                     if (res.detail.usage.total_tokens >= 1500) {
                         objArray[msg.chat.id] = [0]
-                        await logger.sendMessage(telegramAdminId, `@${now} Logger: Token exceeded for ${JSON.stringify(msg.chat)}`)
                     } else {
                         objArray[msg.chat.id] = [res.id]
                     }
                     await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
-                    await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
                 })
             } else {
                 await bot.sendMessage(msg.chat.id, "I could not read your message", { reply_to_message_id: msg.message_id })
@@ -65,9 +62,8 @@ bot.on('message', async (msg) => {
 
         } catch (e) {
             // Tell the user there was an error
-            await bot.sendMessage(msg.chat.id, "Sorry there was an error. Please try again later or use the /reset command." + e, { reply_to_message_id: msg.message_id })
+            await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command.${e}`, { reply_to_message_id: msg.message_id })
             await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e}`)
-
         }
     } else {
         // If this is the "First Convo" with the bot, then we need to create a new conversation
@@ -75,15 +71,14 @@ bot.on('message', async (msg) => {
             // Add the user to the idArray
             idArray.push(msg.chat.id)
             // Sends ChatGPT the message from the Telegram User
-            await api.sendMessage(msgContent + " (Reply in English)").then(async (res) => {
+            await api.sendMessage(`${msgContent} (Reply in English)`).then(async (res) => {
                 await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
-                await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
                 objArray[msg.chat.id] = [res.id]
             })
 
         } catch (e) {
             // Tell the user there was an error
-            await bot.sendMessage(msg.chat.id, "Sorry there was an error. Please try again later or use the /reset command." + e, { reply_to_message_id: msg.message_id })
+            await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id })
             await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e}`)
         }
     }
@@ -98,7 +93,7 @@ bot.onText(/^\/reset$/i, async (msg) => {
         })
         objArray[msg.chat.id] = []
         await bot.sendMessage(msg.chat.id, "Convo reset.")
-        await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
+
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. You may not have a convo to rest." + e)
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from) + " has failed.")
