@@ -1,4 +1,11 @@
 # TelegramChatGPTBot
+A Telegram bot that responds to queries with response via ChatGPT-3.5.
+
+# Features
+* Responds to queries with response via ChatGPT-3.5
+* Rate-limiting via Redis
+
+# Installation
 1. Make sure you have NodeJS installed (https://nodejs.org/en).
 2. Install the NodeJs Packages using this command:
 ```
@@ -29,11 +36,10 @@ ADMINID=""
 LOGAPIKEY=""
 ```
 5. Obtain your Telegram ID from this Telegram Bot -> https://t.me/userinfobot, paste your Telegram ID in the ADMINID variable
-```
-```
+
 6. If you want to log the activities to track usage or debug, setup a 2nd Telegram Bot from @BotFather and obtain another API Key/Token. Paste the 2nd Telegram Bot Token in the LOGAPIKEY variable.
-```
-```
+
+
 4. Run the following command to run the Telegram Bot.
 ```
 node index.js
