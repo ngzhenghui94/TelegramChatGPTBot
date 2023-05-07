@@ -19,7 +19,6 @@ const telegramAdminId = parseInt(process.env.ADMINID);
 // Helper function to get user request info from Redis
 const getUserRequestInfo = async (userId) => {
     let requestInfo = await redis.get(`user: ${userId}`);
-    // console.log(requestInfo)
     if (requestInfo) {
         requestInfo = JSON.parse(requestInfo);
     } else {

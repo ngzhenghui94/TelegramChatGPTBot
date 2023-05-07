@@ -46,7 +46,6 @@ bot.on('message', async (msg) => {
             if (msgContent) {
                 await api.sendMessage(`${msgContent} (Reply in English)`, {
                     parentMessageId: objArray[msg.chat.id][0],
-                    // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).then(async (res) => {
                     if (res.detail.usage.total_tokens >= 1500) {
                         objArray[msg.chat.id] = [0]
@@ -75,7 +74,6 @@ bot.on('message', async (msg) => {
                 await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
                 objArray[msg.chat.id] = [res.id]
             })
-
         } catch (e) {
             // Tell the user there was an error
             await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id })
@@ -93,7 +91,6 @@ bot.onText(/^\/reset$/i, async (msg) => {
         })
         objArray[msg.chat.id] = []
         await bot.sendMessage(msg.chat.id, "Convo reset.")
-
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. You may not have a convo to rest." + e)
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from) + " has failed.")
