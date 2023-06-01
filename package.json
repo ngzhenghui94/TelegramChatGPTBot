@@ -3,8 +3,12 @@
     "chatgpt": "^5.1.2",
     "dotenv": "^16.0.3",
     "moment-timezone": "^0.5.43",
+    "mysql2": "^3.3.0",
     "node-telegram-bot-api": "^0.61.0",
-    "redis": "^4.6.5"
+    "openai-authenticator": "^0.0.3",
+    "openai-token": "^1.0.0",
+    "redis": "^4.6.5",
+    "stripe": "^12.4.0"
   },
   "type": "module",
   "name": "TelegramChatGPTBot",
