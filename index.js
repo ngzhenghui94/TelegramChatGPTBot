@@ -3,8 +3,11 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
-import Stripe from "stripe"
+// import Stripe from "stripe"
+import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { Redis } from 'ioredis';
+import Jimp from "jimp"
+import fs from "fs"
 // import { addChatId } from "./src/subscription.js"
 moment.tz.setDefault("Asia/Singapore");
 dotenv.config()
@@ -174,21 +177,52 @@ bot.onText(/^\/resetcache$/i, (msg) => {
     }
 })
 
-// Reset redis cache on reset command
 bot.onText(/^\/seeredis$/i, async (msg) => {
     if (msg.chat.id == telegramAdminId) {
-        idArray = []
-        objArray = []
-        const cache = await redis.keys('*');
-        const results = [];
-        for (let i = 0; i < cache.length; i++) {
-            results.push(await redis.get(cache[i]));
+        try {
+            let keys = await redis.keys('*');
+            let valuePromises = keys.map(async key => {
+                let value = await redis.get(key);
+                console.log(`Key: ${key}, Value: ${value}`);
+                return `Key: ${key}, Value: ${value}\n`;
+            });
+
+            let values = await Promise.all(valuePromises);
+            let returnMsg = values.join("");
+            await bot.sendMessage(msg.chat.id, returnMsg);
+        } catch (err) {
+            console.error(err);
         }
-        console.log(cache);
-        bot.sendMessage(msg.chat.id, pm2)
     } else {
         bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
     }
+});
+
+
+
+
+async function blobToBuffer(blob) {
+    const arrayBuffer = await blob.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+}
+
+bot.onText(/^\/image/i, async (msg) => {
+    // Check if the user is rate-limited
+    if (await rateLimit(msg)) {
+        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later.");
+        await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
+        return;
+    }
+
+    let data = (msg.text).replace(/\/image /g, "")
+    let imageBlob = await queryStableDiffusion(data)
+    const imageBuffer = await blobToBuffer(imageBlob);
+    const image = await Jimp.read(imageBuffer);
+
+    const imagePath = './image.jpg';
+    const imageJpg = await image.writeAsync(imagePath);
+
+    await bot.sendPhoto(msg.chat.id, imagePath);
+    // Remember to delete the image file after sending it.
+    await fs.promises.unlink(imagePath);
 })
-
-
