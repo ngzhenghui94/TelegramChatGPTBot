@@ -2,7 +2,7 @@ import { ChatGPTAPI } from 'chatgpt'
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
-import { rateLimit } from "./src/rateLimit.js"
+import { rateLimit, addUserToSubscription } from "./src/rateLimit.js"
 // import Stripe from "stripe"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { Redis } from 'ioredis';
@@ -155,6 +155,7 @@ bot.on('successful_payment', (payment) => {
     const chatId = payment.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
+    addUserToSubscription(chatId)
     console.log(payment)
     bot.sendMessage(chatId, 'Payment successful');
 })

@@ -36,22 +36,31 @@ function isUserIdInWhitelist(userId) {
 function isUserIdInBlacklist(userId) {
     return blacklist.split(',').includes(userId.toString());
 }
+
+export const addUserToSubscription = async (userId) => {
+    const requestInfo = await getUserRequestInfo(userId);
+    requestInfo.isSubscriber = true;
+    requestInfo.subscriptionDate = moment().unix();
+    await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
+}
+
 // Rate limit function using redis
 export const rateLimit = async (msg) => {
     const userId = msg.chat.id
     const rateLimitRequests = 5;
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
+    const twentyfourhour = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     const threeSeconds = 3 * 1000; // 3 seconds in milliseconds
     const requestInfo = await getUserRequestInfo(userId);
 
-    // Whitelisting check
+    // Whitelist check
     if (isUserIdInWhitelist(userId)) {
         await logger.sendMessage(telegramAdminId, `Whitelisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 0;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return false;
     }
-
+    // Blacklist Check
     if (isUserIdInBlacklist(userId)) {
         await logger.sendMessage(telegramAdminId, `Blacklisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 99;
@@ -59,17 +68,21 @@ export const rateLimit = async (msg) => {
         return true;
     }
 
+    // Check if user is a subscriber and time
+    if (requestInfo.isSubscriber) {
+        const elapsedTime = Date.now() - requestInfo.subscriptionDate;
+        if (elapsedTime <= twentyfourhour) {
+            await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+            return false;
+        } else {
+            requestInfo.isSubscriber = false
+            requestInfo.subscriptionDate = null;
+        }
+    }
+
     // Normal rate limiting check
     await logger.sendMessage(telegramAdminId, `${userId}:${JSON.stringify(requestInfo)}`);
     if (requestInfo.count < rateLimitRequests) {
-        // if (requestInfo.secondsLimit){
-        //     const elapsedTime = Date.now() - requestInfo.secondsLimit;
-        //     if (elapsedTime < threeSeconds) {
-        //         return true;
-        //     }
-        // } else{
-        //     requestInfo.secondsLimit = Date.now();
-        // }
         requestInfo.count += 1;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return false;
