@@ -16,8 +16,9 @@ const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 const telegramAdminId = process.env.ADMINID
 // const stripe = new Stripe(process.env.STRIPEKEY);
-const redis = new Redis(process.env.REDIS_URL); // initialize Redis client
+const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 const teleSripeProductKey = process.env.STRIPETESTKEY
+
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
@@ -130,10 +131,7 @@ bot.onText(/^\/subscribe$/i, (msg) => {
                 label: 'Base',
                 amount: 500
             }
-        ],
-        {
-            photo_url: './assets/product.jpg', // Optional: Product image
-        }
+        ]
     );
 })
 
@@ -151,11 +149,12 @@ bot.on('pre_checkout_query', (query) => {
 
 
 // Handle successful payment
-bot.on('successful_payment', (payment) => {
+bot.on('successful_payment', async (payment) => {
     const chatId = payment.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
-    addUserToSubscription(chatId)
+    console.log("Adding user to subscription...")
+    await addUserToSubscription(chatId)
     console.log(payment)
     bot.sendMessage(chatId, 'Payment successful');
 })

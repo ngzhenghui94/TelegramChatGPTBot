@@ -38,10 +38,13 @@ function isUserIdInBlacklist(userId) {
 }
 
 export const addUserToSubscription = async (userId) => {
+    console.log(userId)
     const requestInfo = await getUserRequestInfo(userId);
     requestInfo.isSubscriber = true;
     requestInfo.subscriptionDate = moment().unix();
+    console.log(requestInfo)
     await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
+    return
 }
 
 // Rate limit function using redis
@@ -69,9 +72,10 @@ export const rateLimit = async (msg) => {
     }
 
     // Check if user is a subscriber and time
-    if (requestInfo.isSubscriber) {
+    if (requestInfo.isSubscriber == true) {
         const elapsedTime = Date.now() - requestInfo.subscriptionDate;
-        if (elapsedTime <= twentyfourhour) {
+        console.log(elapsedTime)
+        if (elapsedTime < twentyfourhour) {
             await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
             return false;
         } else {
