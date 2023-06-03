@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import Redis from "ioredis";
 import TelegramBot from "node-telegram-bot-api";
+import moment from "moment-timezone"
 dotenv.config();
+moment.tz.setDefault("Asia/Singapore");
 
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client
 const logger = new TelegramBot(process.env.LOGAPIKEY);
@@ -38,13 +40,18 @@ function isUserIdInBlacklist(userId) {
 }
 
 export const addUserToSubscription = async (userId) => {
-    console.log(userId)
-    const requestInfo = await getUserRequestInfo(userId);
-    requestInfo.isSubscriber = true;
-    requestInfo.subscriptionDate = moment().unix();
-    console.log(requestInfo)
-    await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
-    return
+    try {
+        console.log("Adding User to Sub" + userId)
+        const requestInfo = await getUserRequestInfo(userId);
+        requestInfo.isSubscriber = true;
+        requestInfo.subscriptionDate = Date.now();
+        console.log(JSON.stringify(requestInfo))
+        await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
+        return
+    } catch (err) {
+        console.log(err)
+    }
+
 }
 
 // Rate limit function using redis
@@ -74,13 +81,19 @@ export const rateLimit = async (msg) => {
     // Check if user is a subscriber and time
     if (requestInfo.isSubscriber == true) {
         const elapsedTime = Date.now() - requestInfo.subscriptionDate;
-        console.log(elapsedTime)
         if (elapsedTime < twentyfourhour) {
             await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+            requestInfo.isSubscriber = false
+            requestInfo.count = 0;
+            requestInfo.blockTime = null;
+            await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             return false;
         } else {
+            await logger.sendMessage(telegramAdminId, `Subscriber expired: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+            requestInfo.count = 0;
             requestInfo.isSubscriber = false
             requestInfo.subscriptionDate = null;
+            await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         }
     }
 

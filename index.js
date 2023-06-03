@@ -153,7 +153,6 @@ bot.on('successful_payment', async (payment) => {
     const chatId = payment.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
-    console.log("Adding user to subscription...")
     await addUserToSubscription(chatId)
     console.log(payment)
     bot.sendMessage(chatId, 'Payment successful');
@@ -226,3 +225,6 @@ bot.onText(/^\/image/i, async (msg) => {
     // Remember to delete the image file after sending it.
     await fs.promises.unlink(imagePath);
 })
+
+
+addUserToSubscription(telegramAdminId)
