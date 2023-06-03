@@ -41,7 +41,7 @@ function isUserIdInBlacklist(userId) {
 
 export const addUserToSubscription = async (userId) => {
     try {
-        console.log("Adding User to Sub" + userId)
+        console.log("Adding User to Sub - " + userId)
         const requestInfo = await getUserRequestInfo(userId);
         requestInfo.isSubscriber = true;
         requestInfo.subscriptionDate = Date.now();
@@ -54,13 +54,20 @@ export const addUserToSubscription = async (userId) => {
 
 }
 
+// UserInfo object (requestInfo)
+// requestInfo.count
+// requestInfo.isSubscriber
+// requestInfo.subscriptionDate
+// requestInfo.blockTime
+// requestInfo.lastRequestTime
+
 // Rate limit function using redis
 export const rateLimit = async (msg) => {
     const userId = msg.chat.id
     const rateLimitRequests = 5;
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
     const twentyfourhour = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    const threeSeconds = 3 * 1000; // 3 seconds in milliseconds
+    const fiveSeconds = 5 * 1000; // 3 seconds in milliseconds
     const requestInfo = await getUserRequestInfo(userId);
 
     // Whitelist check

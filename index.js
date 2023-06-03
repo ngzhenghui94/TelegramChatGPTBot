@@ -108,6 +108,8 @@ bot.onText(/^\/reset$/i, async (msg) => {
             // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
         })
         objArray[msg.chat.id] = []
+        console.log(objArray)
+        console.log(idArray)
         await bot.sendMessage(msg.chat.id, "Convo reset.")
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
     } catch (e) {
@@ -227,4 +229,4 @@ bot.onText(/^\/image/i, async (msg) => {
 })
 
 
-addUserToSubscription(telegramAdminId)
+// addUserToSubscription(telegramAdminId)
