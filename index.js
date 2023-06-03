@@ -2,13 +2,12 @@ import { ChatGPTAPI } from 'chatgpt'
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
-import { rateLimit, addUserToSubscription } from "./src/rateLimit.js"
-// import Stripe from "stripe"
+import { rateLimit } from "./src/rateLimit.js"
+import { addUserToSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { Redis } from 'ioredis';
 import Jimp from "jimp"
 import fs from "fs"
-// import { addChatId } from "./src/subscription.js"
 moment.tz.setDefault("Asia/Singapore");
 dotenv.config()
 
@@ -50,7 +49,7 @@ bot.on('message', async (msg) => {
     }
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
-        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later.");
+        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
         await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
         return;
     }
@@ -118,10 +117,10 @@ bot.onText(/^\/reset$/i, async (msg) => {
     }
 });
 
-bot.onText(/^\/subscribe$/i, (msg) => {
+bot.onText(/^\/subscribe$/i, async (msg) => {
     const chatId = msg.chat.id;
     // Send a message with a payment button
-    bot.sendInvoice(
+    await bot.sendInvoice(
         chatId,
         'Telegram GPT Subscription',
         '1 Day Unlimited Telegram GPT Query',
@@ -134,7 +133,39 @@ bot.onText(/^\/subscribe$/i, (msg) => {
                 amount: 500
             }
         ]
-    );
+    ).then(async () => {
+        // Send a message with a payment button
+        await bot.sendInvoice(
+            chatId,
+            'Telegram GPT Subscription',
+            '7 Day Unlimited Telegram GPT Query',
+            chatId,
+            teleSripeProductKey,
+            'USD',
+            [
+                {
+                    label: 'Base',
+                    amount: 1000
+                }
+            ]
+        ).then(async () => {
+            // Send a message with a payment button
+            await bot.sendInvoice(
+                chatId,
+                'Telegram GPT Subscription',
+                '30 Day Unlimited Telegram GPT Query',
+                chatId,
+                teleSripeProductKey,
+                'USD',
+                [
+                    {
+                        label: 'Base',
+                        amount: 2500
+                    }
+                ]
+            );
+        })
+    })
 })
 
 
@@ -155,7 +186,7 @@ bot.on('successful_payment', async (payment) => {
     const chatId = payment.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
-    await addUserToSubscription(chatId)
+    await addUserToSubscription(chatId, payment.successful_payment.total_amount)
     console.log(payment)
     bot.sendMessage(chatId, 'Payment successful');
 })
@@ -210,7 +241,7 @@ async function blobToBuffer(blob) {
 bot.onText(/^\/image/i, async (msg) => {
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
-        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later.");
+        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
         await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
         return;
     }
