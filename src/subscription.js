@@ -39,9 +39,9 @@ export const checkSubscription = async (msg) => {
         const timeDelta = Math.floor((expiryDate - Date.now())/1000)
         let returnMsg = ""
         if (timeDelta < 86400){
-            returnMsg = (timeDelta / 60 / 60) + " hours."
+            returnMsg = (timeDelta / 60 / 60).toFixed(2) + " hours."
         } else if (timeDelta >= 86400) {
-            returnMsg = (timeDelta / 60 / 60 /24) + " days."
+            returnMsg = (timeDelta / 60 / 60 /24).toFixed(2) + " days."
         }
         return {
             isSubscriber: true,
