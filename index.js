@@ -240,7 +240,7 @@ bot.onText(/^\/seeredis$/i, async (msg) => {
 bot.onText(/^\/subscription$/i, async (msg) => {
     const userInfo = await getUserRequestInfo(msg.chat.id)
     if (userInfo.isSubscriber == true){
-        let timeDelta = Date.now() - userInfo.subscriptionDate;
+        const timeDelta = Math.floor((Date.now() - userInfo.subscriptionDate) / 1000); // Calculate time difference in seconds
         await bot.sendMessage(msg.chat.id, JSON.stringify(timeDelta))
     }else{
         await bot.sendMessage(msg.chat.id, "You do not have a subscription.")
