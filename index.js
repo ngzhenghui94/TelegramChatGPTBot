@@ -239,7 +239,12 @@ bot.onText(/^\/seeredis$/i, async (msg) => {
 
 bot.onText(/^\/subscription$/i, async (msg) => {
     const userInfo = await getUserRequestInfo()
-    await bot.sendMessage(msg.chat.id, JSON.stringify(userInfo))
+    if (userInfo.isSubscriber){
+        let timeDelta = Date.now() - userInfo.subscriptionDate;
+        await bot.sendMessage(msg.chat.id, JSON.stringify(timeDelta))
+    }else{
+        await bot.sendMessage(msg.chat.id, "You do not have a subscription.")
+    }
 })
 
 
