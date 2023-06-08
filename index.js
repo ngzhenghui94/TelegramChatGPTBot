@@ -247,6 +247,17 @@ bot.onText(/^\/subscription$/i, async (msg) => {
     }
 })
 
+bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
+    const telegramId = parameter[1]
+    const daysToAdd = parameter[2]
+    if (msg.chat.id == telegramAdminId){
+        addUserToSubscription(telegramId, daysToAdd)
+        await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + daysToAdd + " day subscription")
+    }else{
+        await bot.sendMessage(msg.chat.id, "You do not have permission.")
+    }
+})
+
 
 async function blobToBuffer(blob) {
     const arrayBuffer = await blob.arrayBuffer();
