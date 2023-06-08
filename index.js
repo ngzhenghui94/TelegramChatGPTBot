@@ -5,6 +5,7 @@ import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
 import { addUserToSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
+import { getUserRequestInfo } from "./src/userInfo.js"
 import { Redis } from 'ioredis';
 import Jimp from "jimp"
 import fs from "fs"
@@ -236,7 +237,10 @@ bot.onText(/^\/seeredis$/i, async (msg) => {
     }
 });
 
-
+bot.onText(/^\/subscription$/i, async (msg) => {
+    const userInfo = await getUserRequestInfo()
+    await bot.sendMessage(msg.chat.id, JSON.stringify(userInfo))
+})
 
 
 async function blobToBuffer(blob) {
