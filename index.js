@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
-import { blobToBuffer } from "./src/utilities.js"
+import { blobToBuffer, checkRedis, resetRedis } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { getUserRequestInfo } from "./src/userInfo.js"
@@ -16,10 +16,7 @@ dotenv.config()
 const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 const telegramAdminId = process.env.ADMINID
-// const stripe = new Stripe(process.env.STRIPEKEY);
-const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 const teleSripeProductKey = process.env.STRIPETESTKEY
-
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
@@ -40,6 +37,11 @@ bot.on('message', async (msg) => {
     const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
     // Check if the msg contains content/text
     let msgContent;
+    if (msg.chat.type == "group"){
+        await bot.sendMessage("I am not allowed to response in Telegram Group. Please converse with me privately.")
+        clearInterval(typingInterval);
+        return;
+    }
     if (msg.caption) {
         msgContent = msg.caption
     } else if (msg.text) {
@@ -116,8 +118,6 @@ bot.onText(/^\/reset$/i, async (msg) => {
             // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
         })
         objArray[msg.chat.id] = []
-        console.log(objArray)
-        console.log(idArray)
         await bot.sendMessage(msg.chat.id, "Convo reset.")
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
     } catch (e) {
@@ -201,41 +201,27 @@ bot.on('successful_payment', async (payment) => {
 })
 
 // Reset redis cache on reset command
-bot.onText(/^\/resetcache$/i, (msg) => {
+bot.onText(/^\/resetredis$/i, async (msg) => {
     if (msg.chat.id == telegramAdminId) {
         idArray = []
         objArray = []
-        redis.flushdb((err, result) => {
-            if (err) {
-                console.error(err);
-                return;
-            }
-            console.log("Redis database has been reset");
-        });
-        bot.sendMessage(msg.chat.id, "Cache reset.")
+        await resetRedis()
+        await bot.sendMessage(msg.chat.id, "Cache reset.")
     } else {
-        bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
+        await bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
     }
 })
 
-bot.onText(/^\/seeredis$/i, async (msg) => {
+bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
     if (msg.chat.id == telegramAdminId) {
         try {
-            let keys = await redis.keys('*');
-            let valuePromises = keys.map(async key => {
-                let value = await redis.get(key);
-                console.log(`Key: ${key}, Value: ${value}`);
-                return `Key: ${key}, Value: ${value}\n`;
-            });
-
-            let values = await Promise.all(valuePromises);
-            let returnMsg = values.join("");
+            const returnMsg = await checkRedis()
             await bot.sendMessage(msg.chat.id, returnMsg);
         } catch (err) {
             console.error(err);
         }
     } else {
-        bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
+        await bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
     }
 });
 
@@ -275,10 +261,6 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
     }
 })
 
-
-
-
-
 bot.onText(/^\/image/i, async (msg) => {
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
@@ -298,8 +280,6 @@ bot.onText(/^\/image/i, async (msg) => {
     await fs.promises.unlink(imagePath);
 })
 
-
-// addUserToSubscription(telegramAdminId)
 
 bot.onText(/^\/start$/i, async (msg) => {
     const welcomeText = `
@@ -335,8 +315,8 @@ bot.onText(/^\/help$/i, async (msg) => {
     const adminCommands = `
         Additional Administrator Commands:
 
-        1. /resetcache - Administrator command to reset Redis cache.
-        2. /seeredis - Administrator command to see Redis cache contents.
+        1. /resetredis - Administrator command to reset Redis cache.
+        2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
         3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
         4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
     `;
