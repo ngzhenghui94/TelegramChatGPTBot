@@ -36,10 +36,16 @@ export const checkSubscription = async (msg) => {
         }else if(subPackage == "Month"){
             expiryDate = subDate + 18144000000
         }
-        const timeDelta = Math.floor((Date.now() - expiryDate)/1000)
+        const timeDelta = Math.floor((expiryDate - Date.now())/1000)
+        let returnMsg = ""
+        if (timeDelta < 86400){
+            returnMsg = (timeDelta / 60 / 60) + " hours."
+        } else if (timeDelta >= 86400) {
+            returnMsg = (timeDelta / 60 / 60 /24) + " days."
+        }
         return {
             isSubscriber: true,
-            msg: "Your current subscription expiries in: " + timeDelta
+            msg: "Your current subscription expiries in: " + returnMsg
         }
     } else{
         return {
