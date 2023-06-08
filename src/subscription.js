@@ -29,20 +29,29 @@ export const addUserToSubscription = async (userId, amount) => {
     }
 }
 
+export const removeUserFromSubscription = async (userId) => {
+    try {
+        console.log("Removing User from Sub - " + userId)
+        const requestInfo = await getUserRequestInfo(userId);
+        requestInfo.isSubscriber = false;
+        requestInfo.subscriptionDate = null;
+        requestInfo.subscriptionPackage = null;
+        requestInfo.subScriptionEndDate = null;
+        console.log(JSON.stringify(requestInfo))
+        await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
+        return
+    } catch (err) {
+        console.log(err)
+    }
+}
+
 export const checkSubscription = async (msg) => {
     const userInfo = await getUserRequestInfo(msg.chat.id)
     if (userInfo.isSubscriber == true){
         const subDate = userInfo.subscriptionDate
         const subPackage = userInfo.subscriptionPackage
-        let expiryDate;
-        if (subPackage == "Day"){
-            expiryDate = subDate + 86400000 
-        }else if(subPackage == "Week"){
-            expiryDate = subDate + 604800000
-        }else if(subPackage == "Month"){
-            expiryDate = subDate + 18144000000
-        }
-        const timeDelta = Math.floor((expiryDate - Date.now())/1000)
+        const subEndDate = userInfo.subScriptionEndDate
+        const timeDelta = Math.floor((subEndDate - Date.now())/1000)
         let returnMsg = ""
         if (timeDelta < 86400){
             returnMsg = (timeDelta / 60 / 60).toFixed(2) + " hours."

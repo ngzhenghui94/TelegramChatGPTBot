@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
-import { addUserToSubscription, checkSubscription } from "./src/subscription.js"
+import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { getUserRequestInfo } from "./src/userInfo.js"
 import { Redis } from 'ioredis';
@@ -244,15 +244,36 @@ bot.onText(/^\/subscription$/i, async (msg) => {
 })
 
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
-    const telegramId = parameter[1]
-    const daysToAdd = parameter[2]
-    if (msg.chat.id == telegramAdminId){
-        addUserToSubscription(telegramId, daysToAdd)
-        await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + daysToAdd + " day subscription")
-    }else{
-        await bot.sendMessage(msg.chat.id, "You do not have permission.")
+    try {
+        const telegramId = parameter[1]
+        const daysToAdd = parameter[2]
+        if (msg.chat.id == telegramAdminId) {
+            await addUserToSubscription(telegramId, daysToAdd)
+            await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + daysToAdd + " day subscription")
+        } else {
+            await bot.sendMessage(msg.chat.id, "You do not have permission.")
+        }
+    } catch (e) {
+        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        await logger.sendMessage(telegramAdminId, "Error adding subscriber: " + e)
     }
 })
+
+bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
+    try {
+        const telegramId = parameter[1]
+        if (msg.chat.id == telegramAdminId) {
+            await removeUserFromSubscription(telegramId)
+            await bot.sendMessage(msg.chat.id, "Removed Telegram ID: " + telegramId + "  from subscription")
+        } else {
+            await bot.sendMessage(msg.chat.id, "You do not have permission.")
+        }
+    } catch (e) {
+        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        await logger.sendMessage(telegramAdminId, "Error removing subscriber: " + e)
+    }
+})
+
 
 
 async function blobToBuffer(blob) {
