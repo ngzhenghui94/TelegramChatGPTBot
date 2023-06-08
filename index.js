@@ -74,7 +74,7 @@ bot.on('message', async (msg) => {
                     clearInterval(typingInterval);
                 })
             } else {
-                await bot.sendMessage(msg.chat.id, "I could not read your message", { reply_to_message_id: msg.message_id })
+                await bot.sendMessage(msg.chat.id, "I could not process this message.", { reply_to_message_id: msg.message_id })
                 await logger.sendMessage(telegramAdminId, `@${now} Logger: Message error ${JSON.stringify(msg)}`)
                 clearInterval(typingInterval);
             }

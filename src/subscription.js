@@ -10,10 +10,16 @@ export const addUserToSubscription = async (userId, amount) => {
         requestInfo.subscriptionDate = Date.now();
         if (amount == 500) {
             requestInfo.subscriptionPackage = "Day"
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 86400000
         } else if (amount == 1000) {
             requestInfo.subscriptionPackage = "Week"
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 604800000
         } else if (amount == 2500) {
             requestInfo.subscriptionPackage = "Month"
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 18144000000
+        } else {
+            requestInfo.subscriptionPackage = "Custom"
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + (amount * 7257600)
         }
         console.log(JSON.stringify(requestInfo))
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
