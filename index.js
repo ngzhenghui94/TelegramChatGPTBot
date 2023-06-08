@@ -285,19 +285,27 @@ bot.onText(/^\/image/i, async (msg) => {
 
 
 bot.onText(/^\/help$/i, async (msg) => {
-    let helpText = `
-Here's a list of commands that you can use:
+    const commonCommands = `
+        Here's a list of commands that you can use:
 
-1. /help - Shows the list of commands.
-2. /reset - Reset the current conversation with the bot.
-3. /subscribe - Show subscription options for unlimited queries.
-4. /resetcache - Administrator command to reset Redis cache.
-5. /seeredis - Administrator command to see Redis cache contents.
-6. /subscription - Check your current subscription status.
-7. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
-8. /image - Generates an image based on the provided text.
+        1. /help - Shows the list of commands.
+        2. /reset - Reset the current conversation with the bot.
+        3. /subscribe - Show subscription options for unlimited queries.
+        4. /subscription - Check your current subscription status.
+        5. /image - Generates an image based on the provided text.
 
-Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
+        Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
     `;
-    bot.sendMessage(msg.chat.id, helpText);
+
+    const adminCommands = `
+        Additional Administrator Commands:
+
+        1. /resetcache - Administrator command to reset Redis cache.
+        2. /seeredis - Administrator command to see Redis cache contents.
+        3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
+    `;
+
+    const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;
+
+    await bot.sendMessage(msg.chat.id, helpText);
 });
