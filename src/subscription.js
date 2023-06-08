@@ -30,11 +30,11 @@ export const checkSubscription = async (msg) => {
         const subPackage = userInfo.subscriptionPackage
         let expiryDate;
         if (subPackage == "Day"){
-            expiryDate = subDate + 86400 
+            expiryDate = subDate + 86400000 
         }else if(subPackage == "Week"){
-            expiryDate = subDate + 604800
+            expiryDate = subDate + 604800000
         }else if(subPackage == "Month"){
-            expiryDate = subDate + 18144000
+            expiryDate = subDate + 18144000000
         }
         const timeDelta = Math.floor((Date.now() - expiryDate)/1000)
         return {
