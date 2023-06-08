@@ -35,7 +35,7 @@ bot.on('message', async (msg) => {
     console.log(JSON.stringify(msg))
     let now = moment().format("DD/MM/YY HH:mm")
     await bot.sendChatAction(msg.chat.id, "typing")
-
+    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
     // Check if the msg contains content/text
     let msgContent;
     if (msg.caption) {
@@ -51,6 +51,7 @@ bot.on('message', async (msg) => {
     if (await rateLimit(msg)) {
         await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
         await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
+        clearInterval(typingInterval);
         return;
     }
 
@@ -69,16 +70,19 @@ bot.on('message', async (msg) => {
                     }
                     await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
                     await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
+                    clearInterval(typingInterval);
                 })
             } else {
                 await bot.sendMessage(msg.chat.id, "I could not read your message", { reply_to_message_id: msg.message_id })
                 await logger.sendMessage(telegramAdminId, `@${now} Logger: Message error ${JSON.stringify(msg)}`)
+                clearInterval(typingInterval);
             }
 
         } catch (e) {
             // Tell the user there was an error
             await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command.${e}`, { reply_to_message_id: msg.message_id })
             await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`)
+            clearInterval(typingInterval);
         }
     } else {
         // If this is the "First Convo" with the bot, then we need to create a new conversation
@@ -90,11 +94,13 @@ bot.on('message', async (msg) => {
                 await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
                 await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
                 objArray[msg.chat.id] = [res.id]
+                clearInterval(typingInterval);
             })
         } catch (e) {
             // Tell the user there was an error
             await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id })
             await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`)
+            clearInterval(typingInterval);
         }
     }
 });
