@@ -43,6 +43,7 @@ bot.on('message', async (msg) => {
         msgContent = msg.caption
     } else if (msg.text) {
         if (msg.text.startsWith('/')) {
+            clearInterval(typingInterval);
             return;
         } else {
             msgContent = msg.text
