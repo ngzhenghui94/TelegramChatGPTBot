@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
-import { addUserToSubscription } from "./src/subscription.js"
+import { addUserToSubscription, checkSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { getUserRequestInfo } from "./src/userInfo.js"
 import { Redis } from 'ioredis';
@@ -238,13 +238,8 @@ bot.onText(/^\/seeredis$/i, async (msg) => {
 });
 
 bot.onText(/^\/subscription$/i, async (msg) => {
-    const userInfo = await getUserRequestInfo(msg.chat.id)
-    if (userInfo.isSubscriber == true){
-        const timeDelta = Math.floor((Date.now() - userInfo.subscriptionDate) / 1000); // Calculate time difference in seconds
-        await bot.sendMessage(msg.chat.id, JSON.stringify(timeDelta))
-    }else{
-        await bot.sendMessage(msg.chat.id, "You do not have a subscription.")
-    }
+    const subscriptionInfo = await checkSubscription(msg)
+    await bot.sendMessage(msg.chat.id, subscriptionInfo.msg)
 })
 
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {

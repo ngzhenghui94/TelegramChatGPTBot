@@ -22,3 +22,29 @@ export const addUserToSubscription = async (userId, amount) => {
         console.log(err)
     }
 }
+
+export const checkSubscription = async (msg) => {
+    const userInfo = await getUserRequestInfo(msg.chat.id)
+    if (userInfo.isSubscriber == true){
+        const subDate = userInfo.subscriptionDate
+        const subPackage = userInfo.subscriptionPackage
+        let expiryDate;
+        if (subPackage == "Day"){
+            expiryDate = subDate + 86400 
+        }else if(subPackage == "Week"){
+            expiryDate = subDate + 604800
+        }else if(subPackage == "Month"){
+            expiryDate = subDate + 18144000
+        }
+        const timeDelta = expiryDate - Date.now()
+        return {
+            isSubscriber: true,
+            msg: "Your current subscription expiries in: " + timeDelta
+        }
+    } else{
+        return {
+            isSubscriber: false,
+            msg: "You do not have any active subscription."
+        }
+    }
+}
