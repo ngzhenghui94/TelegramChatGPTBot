@@ -19,7 +19,7 @@ export const addUserToSubscription = async (userId, amount) => {
             requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 2592000000
         } else {
             requestInfo.subscriptionPackage = "Custom"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + (amount * 5184000)
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + (amount * 172800)
         }
         console.log(JSON.stringify(requestInfo))
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
@@ -48,8 +48,6 @@ export const removeUserFromSubscription = async (userId) => {
 export const checkSubscription = async (msg) => {
     const userInfo = await getUserRequestInfo(msg.chat.id)
     if (userInfo.isSubscriber == true){
-        const subDate = userInfo.subscriptionDate
-        const subPackage = userInfo.subscriptionPackage
         const subEndDate = userInfo.subScriptionEndDate
         const timeDelta = Math.floor((subEndDate - Date.now())/1000)
         let returnMsg = ""

@@ -3,6 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
+import { blobToBuffer } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import { getUserRequestInfo } from "./src/userInfo.js"
@@ -276,10 +277,7 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
 
 
 
-async function blobToBuffer(blob) {
-    const arrayBuffer = await blob.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-}
+
 
 bot.onText(/^\/image/i, async (msg) => {
     // Check if the user is rate-limited
@@ -288,14 +286,12 @@ bot.onText(/^\/image/i, async (msg) => {
         await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
         return;
     }
-
     let data = (msg.text).replace(/\/image /g, "")
     let imageBlob = await queryStableDiffusion(data)
     const imageBuffer = await blobToBuffer(imageBlob);
     const image = await Jimp.read(imageBuffer);
-
-    const imagePath = './image.jpg';
-    const imageJpg = await image.writeAsync(imagePath);
+    const randomId = Math.floor(Math.random() * 1000000000);
+    const imagePath = `./image-${randomId}.jpg`;
 
     await bot.sendPhoto(msg.chat.id, imagePath);
     // Remember to delete the image file after sending it.
@@ -342,6 +338,7 @@ bot.onText(/^\/help$/i, async (msg) => {
         1. /resetcache - Administrator command to reset Redis cache.
         2. /seeredis - Administrator command to see Redis cache contents.
         3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
+        4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
     `;
 
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;
