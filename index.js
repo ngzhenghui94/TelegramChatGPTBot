@@ -238,8 +238,8 @@ bot.onText(/^\/seeredis$/i, async (msg) => {
 });
 
 bot.onText(/^\/subscription$/i, async (msg) => {
-    const userInfo = await getUserRequestInfo()
-    if (userInfo.isSubscriber){
+    const userInfo = await getUserRequestInfo(msg.chat.id)
+    if (userInfo.isSubscriber == true){
         let timeDelta = Date.now() - userInfo.subscriptionDate;
         await bot.sendMessage(msg.chat.id, JSON.stringify(timeDelta))
     }else{
