@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { rateLimit } from "./src/rateLimit.js"
-import { blobToBuffer, checkRedis, resetRedis } from "./src/utilities.js"
+import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
 import Jimp from "jimp"
@@ -217,6 +217,19 @@ bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
         }
     } else {
         await bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
+    }
+});
+
+bot.onText(/^\/redis (.+)/i, async (msg) => {
+    if (msg.chat.id == telegramAdminId) {
+        try {
+            const returnMsg = await checkUserOnRedis()
+            await bot.sendMessage(msg.chat.id, returnMsg);
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        await bot.sendMessage(msg.chat.id, "You do not have permission to check user.")
     }
 });
 

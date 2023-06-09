@@ -38,3 +38,17 @@ export const resetRedis = async () => {
     }
 }
 
+export const checkUserOnRedis = async (telegramId) => {
+    try {
+        let value = await redis.get(`user: ${telegramId}`);
+        if (value) {
+            console.log(`Key: user: ${telegramId}, Value: ${value}`);
+            return `Key: user: ${telegramId}, Value: ${value}\n`;
+        } else {
+            console.log(`Key: user: ${telegramId} does not exist.`);
+            return `Key: user: ${telegramId} does not exist.\n`;
+        }
+    } catch (e) {
+        console.log("Check Redis Error: " + e);
+    }
+}
