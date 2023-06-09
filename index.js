@@ -68,10 +68,10 @@ bot.on('message', async (msg) => {
                 parentMessageId: userRequestInfo.lastMessageId
             }).then(async (res) => {
                 if (res.detail.usage.total_tokens >= 1500) {
-                    userRequestInfo = { lastMessageId: 0 };
+                    userRequestInfo.lastMessageId = null;
                     await logger.sendMessage(telegramAdminId, `@${now} Logger: Token exceeded for ${JSON.stringify(msg.chat)}`);
                 } else {
-                    userRequestInfo = { lastMessageId: res.id };
+                    userRequestInfo.lastMessageId = res.id;
                 }
                 await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
                 await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
