@@ -18,95 +18,76 @@ const teleSripeProductKey = process.env.STRIPETESTKEY
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
-    debug: false,
+    debug: true,
     temperature: 1
 })
 
-let idArray = []
-let objArray = {}
-
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
-
     // Logs the msg - for debugging
-    console.log(JSON.stringify(msg))
-    let now = moment().format("DD/MM/YY HH:mm")
-    await bot.sendChatAction(msg.chat.id, "typing")
+    console.log(JSON.stringify(msg));
+    let now = moment().format("DD/MM/YY HH:mm");
+    await bot.sendChatAction(msg.chat.id, "typing");
     const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+
     // Check if the msg contains content/text
     let msgContent;
     if (msg.chat.type == "group"){
-        await bot.sendMessage(msg.chat.id, "I am not allowed to response in Telegram Group. Please converse with me privately.")
+        await bot.sendMessage(msg.chat.id, "I am not allowed to respond in a Telegram Group. Please converse with me privately.");
         clearInterval(typingInterval);
         return;
     }
     if (msg.caption) {
-        msgContent = msg.caption
+        msgContent = msg.caption;
     } else if (msg.text) {
         if (msg.text.startsWith('/')) {
             clearInterval(typingInterval);
             return;
         } else {
-            msgContent = msg.text
+            msgContent = msg.text;
         }
     }
+
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
         await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
-        await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
+        await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from));
         clearInterval(typingInterval);
         return;
     }
 
-    if (idArray.includes(msg.chat.id)) {
-        try {
-            if (msgContent) {
-                await api.sendMessage(`${msgContent}`, {
-                    parentMessageId: objArray[msg.chat.id][0],
-                    // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
-                }).then(async (res) => {
-                    if (res.detail.usage.total_tokens >= 1500) {
-                        objArray[msg.chat.id] = [0]
-                        await logger.sendMessage(telegramAdminId, `@${now} Logger: Token exceeded for ${JSON.stringify(msg.chat)}`)
-                    } else {
-                        objArray[msg.chat.id] = [res.id]
-                    }
-                    await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
-                    await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
-                    clearInterval(typingInterval);
-                })
-            } else {
-                await bot.sendMessage(msg.chat.id, "I could not process this message.", { reply_to_message_id: msg.message_id })
-                await logger.sendMessage(telegramAdminId, `@${now} Logger: Message error ${JSON.stringify(msg)}`)
-                clearInterval(typingInterval);
-            }
+    let userId = msg.chat.id;
+    let userRequestInfo = await getUserRequestInfo(userId);
 
-        } catch (e) {
-            // Tell the user there was an error
-            await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command.${e}`, { reply_to_message_id: msg.message_id })
-            await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`)
-            clearInterval(typingInterval);
-        }
-    } else {
-        // If this is the "First Convo" with the bot, then we need to create a new conversation
-        try {
-            // Add the user to the idArray
-            idArray.push(msg.chat.id)
-            // Sends ChatGPT the message from the Telegram User
-            await api.sendMessage(`${msgContent}`).then(async (res) => {
-                await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id })
-                await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from))
-                objArray[msg.chat.id] = [res.id]
+    try {
+        if (msgContent) {
+            await api.sendMessage(`${msgContent}`, {
+                parentMessageId: userRequestInfo.lastMessageId
+            }).then(async (res) => {
+                if (res.detail.usage.total_tokens >= 1500) {
+                    userRequestInfo = { lastMessageId: 0 };
+                    await logger.sendMessage(telegramAdminId, `@${now} Logger: Token exceeded for ${JSON.stringify(msg.chat)}`);
+                } else {
+                    userRequestInfo = { lastMessageId: res.id };
+                }
+                await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
+                await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
+                await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from));
                 clearInterval(typingInterval);
-            })
-        } catch (e) {
-            // Tell the user there was an error
-            await bot.sendMessage(msg.chat.id, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id })
-            await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`)
+            });
+        } else {
+            await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
+            await logger.sendMessage(telegramAdminId, `@${now} Logger: Message error ${JSON.stringify(msg)}`);
             clearInterval(typingInterval);
         }
+    } catch (e) {
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command.${e}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`);
+        clearInterval(typingInterval);
     }
 });
+
 
 
 bot.onText(/^\/reset$/i, async (msg) => {
