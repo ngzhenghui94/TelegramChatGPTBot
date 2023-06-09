@@ -282,26 +282,15 @@ bot.onText(/^\/image/i, async (msg) => {
 
 
 bot.onText(/^\/start$/i, async (msg) => {
-    const welcomeText = `
-        Hello! I'm your friendly bot. 🤖
-
-        I'm here to help you with a variety of tasks. Here's what I can do:
-
-        1. Answer your questions 🧐
-        2. Generate images from text 🎨
-        3. Check your subscription status 💳
-
-        Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
-
-        How can I assist you today?
-    `;
-
-    await bot.sendMessage(msg.chat.id, welcomeText);
+    await api.sendMessage("Hello! I'm your friendly bot. 🤖\n I'm here to help you with a variety of tasks. Here's what I can do: \n1. Answer your questions 🧐\n2. Generate images from text 🎨\n3. Check your subscription status 💳 \nSimply chat with me normally! Alternatively, to see a list of commands, you can use /help.\nHow may I assist you today? 🙂")
+    .then(async (res)=>{
+        await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id });
+    })
 });
 
 bot.onText(/^\/help$/i, async (msg) => {
     const commonCommands = `
-        Here's a list of commands that you can use:
+    Here's a list of commands that you can use:
 
         1. /help - Shows the list of commands.
         2. /reset - Reset the current conversation with the bot.
@@ -309,11 +298,11 @@ bot.onText(/^\/help$/i, async (msg) => {
         4. /subscription - Check your current subscription status.
         5. /image - Generates an image based on the provided text.
 
-        Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
+    Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
     `;
 
     const adminCommands = `
-        Additional Administrator Commands:
+    Additional Administrator Commands:
 
         1. /resetredis - Administrator command to reset Redis cache.
         2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
