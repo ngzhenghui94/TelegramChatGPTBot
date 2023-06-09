@@ -38,7 +38,7 @@ bot.on('message', async (msg) => {
     // Check if the msg contains content/text
     let msgContent;
     if (msg.chat.type == "group"){
-        await bot.sendMessage("I am not allowed to response in Telegram Group. Please converse with me privately.")
+        await bot.sendMessage(msg.chat.id, "I am not allowed to response in Telegram Group. Please converse with me privately.")
         clearInterval(typingInterval);
         return;
     }
