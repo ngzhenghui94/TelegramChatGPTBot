@@ -6,8 +6,6 @@ import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, resetRedis } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js';
-import { getUserRequestInfo } from "./src/userInfo.js"
-import { Redis } from 'ioredis';
 import Jimp from "jimp"
 import fs from "fs"
 moment.tz.setDefault("Asia/Singapore");
@@ -177,8 +175,6 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
     })
 })
 
-
-
 bot.on('pre_checkout_query', (query) => {
     const chatId = query.from.id;
 
@@ -188,7 +184,6 @@ bot.on('pre_checkout_query', (query) => {
     // Send a message to notify the user that payment is being processed
     bot.sendMessage(chatId, 'Payment processing...');
 });
-
 
 // Handle successful payment
 bot.on('successful_payment', async (payment) => {
