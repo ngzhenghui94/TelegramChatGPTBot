@@ -1,12 +1,13 @@
 import { ChatGPTAPI } from 'chatgpt'
-import TelegramBot from "node-telegram-bot-api";
-import dotenv from "dotenv";
-import moment from "moment-timezone";
+import TelegramBot from "node-telegram-bot-api"
+import dotenv from "dotenv"
+import moment from "moment-timezone"
+import Redis from "ioredis"
 import { getUserRequestInfo } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
-import { queryStableDiffusion } from './src/stableDiffusion.js';
+import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
 import fs from "fs"
 moment.tz.setDefault("Asia/Singapore");
@@ -16,6 +17,7 @@ const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 const telegramAdminId = process.env.ADMINID
 const teleSripeProductKey = process.env.STRIPETESTKEY
+const redis = new Redis(process.env.REDIS_URL); 
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
