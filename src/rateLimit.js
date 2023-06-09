@@ -44,6 +44,7 @@ export const rateLimit = async (msg) => {
     if (isUserIdInWhitelist(userId)) {
         await logger.sendMessage(telegramAdminId, `Whitelisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 0;
+        requestInfo.isWhitelisted = true;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return false;
     }
@@ -51,6 +52,7 @@ export const rateLimit = async (msg) => {
     if (isUserIdInBlacklist(userId)) {
         await logger.sendMessage(telegramAdminId, `Blacklisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 99;
+        requestInfo.isBlacklisted = true;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return true;
     }

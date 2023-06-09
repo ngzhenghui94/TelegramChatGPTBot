@@ -221,10 +221,10 @@ bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
 });
 
 bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
-    let telegramAdminId = parameter[1]
+    let telegramId = parameter[1]
     if (msg.chat.id == telegramAdminId) {
         try {
-            const returnMsg = await checkUserOnRedis()
+            const returnMsg = await checkUserOnRedis(telegramId)
             await bot.sendMessage(msg.chat.id, returnMsg);
         } catch (err) {
             console.error(err);
