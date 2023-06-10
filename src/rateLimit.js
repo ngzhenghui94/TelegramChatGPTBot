@@ -34,7 +34,6 @@ export const rateLimit = async (msg) => {
     const userId = msg.from.id
     const rateLimitRequests = 5;
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
-    const fiveSecondWindow = 5 * 1000; // 5 seconds in milliseconds
     const twentyfourhour = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     const weekhour = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
     const monthhour = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
@@ -56,17 +55,6 @@ export const rateLimit = async (msg) => {
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return true;
     }
-
-    // 5 second rate limiting check
-    if (requestInfo.lastRequestTime) {
-        const elapsedTime = Date.now() - requestInfo.lastRequestTime;
-        if (elapsedTime < fiveSecondWindow) {
-            let timeLeft = (fiveSecondWindow - elapsedTime) / 1000;
-            await logger.sendMessage(telegramAdminId, `5 Second Rate Limit Tracker: ${userId} - ${timeLeft.toFixed(2)} seconds`);
-            return true;
-        }
-    }
-    requestInfo.lastRequestTime = Date.now();
 
     // Check if user is a subscriber and time
     if (requestInfo.isSubscriber == true) {
@@ -141,7 +129,7 @@ export const rateLimit = async (msg) => {
         }
         // Time window elapsed, reset count and clear block state
         requestInfo.blockTime = null;
-        requestInfo.count = 1;
+        requestInfo.count = 0;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return false;
     }

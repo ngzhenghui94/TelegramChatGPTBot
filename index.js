@@ -21,7 +21,7 @@ const redis = new Redis(process.env.REDIS_URL);
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
-    debug: true,
+    debug: false,
     temperature: 1
 })
 
