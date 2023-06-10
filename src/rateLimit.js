@@ -31,7 +31,7 @@ function isUserIdInBlacklist(userId) {
 
 // Rate limit function using redis
 export const rateLimit = async (msg) => {
-    const userId = msg.chat.id
+    const userId = msg.from.id
     const rateLimitRequests = 5;
     const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
     const fiveSecondWindow = 5 * 1000; // 5 seconds in milliseconds
