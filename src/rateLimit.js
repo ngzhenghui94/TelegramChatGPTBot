@@ -33,10 +33,9 @@ function isUserIdInBlacklist(userId) {
 export const rateLimit = async (msg) => {
     const userId = msg.from.id
     const rateLimitRequests = 5;
-    const timeWindow = 10 * 60 * 1000; // 10 minute in milliseconds
-    const twentyfourhour = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    const weekhour = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-    const monthhour = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    const timeWindow = 1200000 // 20 * 60 * 1000; // 20 minute in milliseconds
+    const monthhour = 2592000000 // 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    const yearhour = 31104000000 // 12 * 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     const requestInfo = await getUserRequestInfo(userId);
 
     // Whitelist check
@@ -59,30 +58,14 @@ export const rateLimit = async (msg) => {
     // Check if user is a subscriber and time
     if (requestInfo.isSubscriber == true) {
         const elapsedTime = Date.now() - requestInfo.subscriptionDate;
-        console.log(elapsedTime + " : " + twentyfourhour)
-        if (requestInfo.subscriptionPackage == "Day") {
-            if (elapsedTime < twentyfourhour) {
+        console.log(elapsedTime + " : " + monthhour)
+        if (requestInfo.subscriptionPackage == "Year") {
+            if (elapsedTime < yearhour) {
                 await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
                 requestInfo.isSubscriber = true
                 requestInfo.count = 0;
                 requestInfo.blockTime = null;
-                requestInfo.subscriptionPackage = "Day"
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
-                return false;
-            } else {
-                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.count = 0;
-                requestInfo.isSubscriber = false
-                requestInfo.subscriptionDate = null;
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
-            }
-        } else if (elapsedTime.subscriptionPackage == "Week") {
-            if (elapsedTime < weekhour) {
-                await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.isSubscriber = true
-                requestInfo.count = 0;
-                requestInfo.blockTime = null;
-                requestInfo.subscriptionPackage = "Week"
+                requestInfo.subscriptionPackage = "Year"
                 await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
                 return false;
             } else {

@@ -37,7 +37,7 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
     // The 'match' is an array with the message text and the captured "message"
     // message will contain the string after "!bot "
     const msgContent = match[1];
-    
+
     if (msg.chat.type == "group") {
 
         // Check if the user is rate-limited
@@ -175,14 +175,14 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
     await bot.sendInvoice(
         chatId,
         'Telegram GPT Subscription',
-        '1 Day Unlimited Telegram GPT Query',
+        '30 days unlimited telegram ChatGPT query',
         chatId,
         teleSripeProductKey,
         'USD',
         [
             {
                 label: 'Base',
-                amount: 500
+                amount: 1098
             }
         ]
     ).then(async () => {
@@ -190,35 +190,20 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
         await bot.sendInvoice(
             chatId,
             'Telegram GPT Subscription',
-            '7 Day Unlimited Telegram GPT Query',
+            '1 year unlimited telegram ChatGPT query',
             chatId,
             teleSripeProductKey,
             'USD',
             [
                 {
                     label: 'Base',
-                    amount: 1000
+                    amount: 9800
                 }
             ]
-        ).then(async () => {
-            // Send a message with a payment button
-            await bot.sendInvoice(
-                chatId,
-                'Telegram GPT Subscription',
-                '30 Day Unlimited Telegram GPT Query',
-                chatId,
-                teleSripeProductKey,
-                'USD',
-                [
-                    {
-                        label: 'Base',
-                        amount: 2500
-                    }
-                ]
-            );
-        })
+        );
     })
 })
+
 
 bot.on('pre_checkout_query', (query) => {
     const chatId = query.from.id;

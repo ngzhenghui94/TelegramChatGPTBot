@@ -8,15 +8,12 @@ export const addUserToSubscription = async (userId, amount) => {
         const requestInfo = await getUserRequestInfo(userId);
         requestInfo.isSubscriber = true;
         requestInfo.subscriptionDate = Date.now();
-        if (amount == 500) {
-            requestInfo.subscriptionPackage = "Day"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 86400000
-        } else if (amount == 1000) {
-            requestInfo.subscriptionPackage = "Week"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 604800000
-        } else if (amount == 2500) {
+        if (amount == 1098) {
             requestInfo.subscriptionPackage = "Month"
             requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 2592000000
+        } else if (amount == 9800) {
+            requestInfo.subscriptionPackage = "Week"
+            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 31104000000
         } else {
             requestInfo.subscriptionPackage = "Custom"
             requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + (amount * 172800)
