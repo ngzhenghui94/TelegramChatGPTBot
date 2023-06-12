@@ -28,17 +28,17 @@ const api = new ChatGPTAPI({
 
 // Matches "!bot" command
 bot.onText(/!bot (.+)/, async (msg, match) => {
-    // Logs the msg - for debugging
-    console.log(JSON.stringify(msg));
-    let now = moment().format("DD/MM/YY HH:mm");
-    await bot.sendChatAction(msg.chat.id, "typing");
-    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
-
-    // The 'match' is an array with the message text and the captured "message"
-    // message will contain the string after "!bot "
-    const msgContent = match[1];
 
     if (msg.chat.type == "group") {
+        // Logs the msg - for debugging
+        console.log(JSON.stringify(msg));
+        let now = moment().format("DD/MM/YY HH:mm");
+        await bot.sendChatAction(msg.chat.id, "typing");
+        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+
+        // The 'match' is an array with the message text and the captured "message"
+        // message will contain the string after "!bot "
+        const msgContent = match[1];
 
         // Check if the user is rate-limited
         if (await rateLimit(msg)) {
@@ -81,16 +81,17 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
             clearInterval(typingInterval);
             return;
         }
+        clearInterval(typingInterval);
     }
 });
 
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
-    // Logs the msg - for debugging
-    console.log(JSON.stringify(msg));
-    let now = moment().format("DD/MM/YY HH:mm");
 
     if (msg.chat.type == "private") {
+        // Logs the msg - for debugging
+        console.log(JSON.stringify(msg));
+        let now = moment().format("DD/MM/YY HH:mm");
         await bot.sendChatAction(msg.chat.id, "typing");
         const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
         let msgContent;
@@ -146,10 +147,8 @@ bot.on('message', async (msg) => {
             clearInterval(typingInterval);
             return;
         }
+        clearInterval(typingInterval);
     }
-
-    clearInterval(typingInterval);
-    return
 });
 
 
