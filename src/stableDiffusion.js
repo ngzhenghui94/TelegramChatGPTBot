@@ -14,6 +14,6 @@ export const queryStableDiffusion = async (data) => {
         body: JSON.stringify(data),
     })
     const result = await response.blob();
-    console.log(result)
+    //console.log(result)
     return result;
 }
