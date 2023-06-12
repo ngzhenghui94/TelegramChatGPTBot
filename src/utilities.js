@@ -52,3 +52,15 @@ export const checkUserOnRedis = async (telegramId) => {
         console.log("Check Redis Error: " + e);
     }
 }
+
+export const getUsersnameFromMsg = async (msg) => {
+    let username = "";
+    if (msg.from.first_name){
+        username = msg.from.first_name
+    } else if (msg.from.username) {
+        username = msg.from.username
+    } else {
+        username = "Anonymous User"
+    }
+    return username;
+}
