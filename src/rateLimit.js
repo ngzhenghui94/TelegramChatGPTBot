@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import Redis from "ioredis";
 import TelegramBot from "node-telegram-bot-api";
 import moment from "moment-timezone"
-import { getUserRequestInfo } from "./userInfo.js";
+import { getUserRequestInfo, getUsersnameFromMsg } from "./userInfo.js";
 dotenv.config();
 moment.tz.setDefault("Asia/Singapore");
 
