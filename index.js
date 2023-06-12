@@ -89,10 +89,10 @@ bot.on('message', async (msg) => {
     // Logs the msg - for debugging
     console.log(JSON.stringify(msg));
     let now = moment().format("DD/MM/YY HH:mm");
-    await bot.sendChatAction(msg.chat.id, "typing");
-    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
 
     if (msg.chat.type == "private") {
+        await bot.sendChatAction(msg.chat.id, "typing");
+        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
         let msgContent;
         if (msg.caption) {
             msgContent = msg.caption;
