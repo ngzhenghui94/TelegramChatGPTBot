@@ -35,7 +35,7 @@ export const rateLimit = async (msg) => {
     const rateLimitRequests = 5;
     const timeWindow = 1200000 // 20 * 60 * 1000; // 20 minute in milliseconds
     const monthhour = 2592000000 // 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-    const yearhour = 31104000000 // 12 * 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    const yearhour = 31104000000 // 12 * 30 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
     const requestInfo = await getUserRequestInfo(userId);
     const username = await getUsersnameFromMsg(msg)
 
