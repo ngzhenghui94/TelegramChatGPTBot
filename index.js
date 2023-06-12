@@ -321,13 +321,15 @@ bot.onText(/^\/image/i, async (msg) => {
 
 bot.onText(/^\/start$/i, async (msg) => {
     const welcomeText = `
-        Hello! I'm your friendly bot. 🤖
-        I'm here to help you with a variety of tasks. Here's what I can do:
-        1. Answer your questions 🧐
-        2. Generate images from text 🎨
-        3. Check your subscription status 💳
-        Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
-        How can I assist you today?
+    Hello! I'm your personal AI Chat bot. 🤖
+    I'm here to help you with a variety of tasks. Here's what I can do:
+    1. Answer your questions (chat normally with me! or use !bot <description> in group chat)🧐
+    2. Generate images from text (use /image <description>)🎨
+    3. Check your subscription status (/subscription)💳
+
+    Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
+
+    How can I assist you today?
     `;
 
     await bot.sendMessage(msg.chat.id, welcomeText);
