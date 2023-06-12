@@ -125,10 +125,4 @@ export const rateLimit = async (msg) => {
 }
 
 
-// Rate limit function using redis
-export const removeFromRedisCache = async (userId) => {
-    await redis.del(`user: ${userId}`);
-    return;
-}
-
 

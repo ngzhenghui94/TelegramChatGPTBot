@@ -52,3 +52,9 @@ export const checkUserOnRedis = async (telegramId) => {
         console.log("Check Redis Error: " + e);
     }
 }
+
+// Rate limit function using redis
+export const removeFromRedisCache = async (userId) => {
+    await redis.del(`user: ${userId}`);
+    return;
+}
