@@ -173,7 +173,7 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
     // Send a message with a payment button
     await bot.sendInvoice(
         chatId,
-        'Telegram GPT Subscription',
+        'Telegram ChatGPT Subscription (30 Days)',
         '30 days unlimited telegram ChatGPT query',
         chatId,
         teleSripeProductKey,
@@ -188,7 +188,7 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
         // Send a message with a payment button
         await bot.sendInvoice(
             chatId,
-            'Telegram GPT Subscription',
+            'Telegram ChatGPT Subscription (1 Year)',
             '1 year unlimited telegram ChatGPT query',
             chatId,
             teleSripeProductKey,
