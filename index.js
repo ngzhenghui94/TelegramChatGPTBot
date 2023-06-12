@@ -16,7 +16,7 @@ dotenv.config()
 const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
 const logger = new TelegramBot(process.env.LOGAPIKEY)
 const telegramAdminId = process.env.ADMINID
-const teleSripeProductKey = process.env.STRIPETESTKEY
+const teleSripeProductKey = process.env.TELESTRIPEKEY
 const redis = new Redis(process.env.REDIS_URL);
 
 const api = new ChatGPTAPI({
@@ -351,10 +351,10 @@ bot.onText(/^\/help$/i, async (msg) => {
     const adminCommands = `
     Additional Administrator Commands:
 
-        1. /resetredis - Administrator command to reset Redis cache.
-        2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
-        3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
-        4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
+    1. /resetredis - Administrator command to reset Redis cache.
+    2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
+    3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
+    4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
     `;
 
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;
