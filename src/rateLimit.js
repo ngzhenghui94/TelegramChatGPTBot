@@ -37,10 +37,11 @@ export const rateLimit = async (msg) => {
     const monthhour = 2592000000 // 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     const yearhour = 31104000000 // 12 * 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     const requestInfo = await getUserRequestInfo(userId);
+    const username = await getUsersnameFromMsg(msg)
 
     // Whitelist check
     if (isUserIdInWhitelist(userId)) {
-        await logger.sendMessage(telegramAdminId, `Whitelisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+        await logger.sendMessage(telegramAdminId, `Whitelisted: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 0;
         requestInfo.isWhitelisted = true;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
@@ -48,7 +49,7 @@ export const rateLimit = async (msg) => {
     }
     // Blacklist Check
     if (isUserIdInBlacklist(userId)) {
-        await logger.sendMessage(telegramAdminId, `Blacklisted: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+        await logger.sendMessage(telegramAdminId, `Blacklisted: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
         requestInfo.count = 99;
         requestInfo.isBlacklisted = true;
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
@@ -61,7 +62,7 @@ export const rateLimit = async (msg) => {
         console.log(elapsedTime + " : " + monthhour)
         if (requestInfo.subscriptionPackage == "Year") {
             if (elapsedTime < yearhour) {
-                await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+                await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
                 requestInfo.isSubscriber = true
                 requestInfo.count = 0;
                 requestInfo.blockTime = null;
@@ -69,7 +70,7 @@ export const rateLimit = async (msg) => {
                 await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
                 return false;
             } else {
-                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
                 requestInfo.count = 0;
                 requestInfo.isSubscriber = false
                 requestInfo.subscriptionDate = null;
@@ -77,7 +78,7 @@ export const rateLimit = async (msg) => {
             }
         } else if (elapsedTime.subscriptionPackage == "Month") {
             if (elapsedTime < monthhour) {
-                await logger.sendMessage(telegramAdminId, `Subscriber: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+                await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
                 requestInfo.isSubscriber = true
                 requestInfo.count = 0;
                 requestInfo.blockTime = null;
@@ -85,7 +86,7 @@ export const rateLimit = async (msg) => {
                 await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
                 return false;
             } else {
-                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${msg.chat.first_name} - ${userId}:${JSON.stringify(requestInfo)}`);
+                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
                 requestInfo.count = 0;
                 requestInfo.isSubscriber = false
                 requestInfo.subscriptionDate = null;
