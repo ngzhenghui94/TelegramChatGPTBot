@@ -320,10 +320,17 @@ bot.onText(/^\/image/i, async (msg) => {
 
 
 bot.onText(/^\/start$/i, async (msg) => {
-    await api.sendMessage("Context: I am using the bot for the first time, introduction message: Hello! I'm your friendly bot. 🤖\n I'm here to help you with a variety of tasks. Here's what I can do: \n1. Answer your questions 🧐\n2. Generate images from text 🎨\n3. Check your subscription status 💳 \nSimply chat with me normally! Alternatively, to see a list of commands, you can use /help.\nHow may I assist you today? 🙂")
-        .then(async (res) => {
-            await bot.sendMessage(msg.chat.id, res.text, { reply_to_message_id: msg.message_id });
-        })
+    const welcomeText = `
+        Hello! I'm your friendly bot. 🤖
+        I'm here to help you with a variety of tasks. Here's what I can do:
+        1. Answer your questions 🧐
+        2. Generate images from text 🎨
+        3. Check your subscription status 💳
+        Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
+        How can I assist you today?
+    `;
+
+    await bot.sendMessage(msg.chat.id, welcomeText);
 });
 
 bot.onText(/^\/help$/i, async (msg) => {
