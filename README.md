@@ -1,9 +1,10 @@
 # TelegramChatGPTBot
-A Telegram bot that responds to queries with response via ChatGPT-3.5.
+A Telegram bot that responds to queries with response from OpenAI/ChatGPT
 
 # Features
-* Responds to queries with response via ChatGPT-3.5
-* Rate-limiting via Redis
+* Responds to queries with response via OpenAI/ChatGPT.
+* Rate-limiting tracked via in-mem Redis
+* Paid Subscription Model
 
 # Installation
 1. Make sure you have NodeJS installed (https://nodejs.org/en).
