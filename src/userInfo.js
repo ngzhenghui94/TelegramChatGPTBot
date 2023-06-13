@@ -15,7 +15,6 @@ export const getUserRequestInfo = async (userId) => {
     return requestInfo;
 };
 
-
 export const getUsersnameFromMsg = async (msg) => {
     let username = "";
     if (msg.from.first_name){

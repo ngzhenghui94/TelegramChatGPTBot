@@ -3,7 +3,7 @@ import TelegramBot from "node-telegram-bot-api"
 import dotenv from "dotenv"
 import moment from "moment-timezone"
 import Redis from "ioredis"
-import { getUserRequestInfo } from "./src/userInfo.js"
+import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
 import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
@@ -34,30 +34,29 @@ const api = new ChatGPTAPI({
 
 // Matches "!bot" command
 bot.onText(/!bot (.+)/, async (msg, match) => {
+    const username = await getUsersnameFromMsg(msg)
+    try {
+        if (msg.chat.type == "group") {
+            // Logs the msg - for debugging
+            console.log(JSON.stringify(msg));
+            let now = moment().format("DD/MM/YY HH:mm");
+            await bot.sendChatAction(msg.chat.id, "typing");
+            const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
 
-    if (msg.chat.type == "group") {
-        // Logs the msg - for debugging
-        console.log(JSON.stringify(msg));
-        let now = moment().format("DD/MM/YY HH:mm");
-        await bot.sendChatAction(msg.chat.id, "typing");
-        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+            // The 'match' is an array with the message text and the captured "message"
+            // message will contain the string after "!bot "
+            const msgContent = match[1];
 
-        // The 'match' is an array with the message text and the captured "message"
-        // message will contain the string after "!bot "
-        const msgContent = match[1];
+            // Check if the user is rate-limited
+            if (await rateLimit(msg)) {
+                await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 20 minute. Please wait and try again later or /subscribe for unlimited query");
+                await logger.sendMessage(telegramAdminId, `At: ${now}, ${username} has reached rate limit. ${JSON.stringify(msg)}`);
+                clearInterval(typingInterval);
+                return;
+            }
 
-        // Check if the user is rate-limited
-        if (await rateLimit(msg)) {
-            await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
-            await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from));
-            clearInterval(typingInterval);
-            return;
-        }
-
-        let userId = msg.from.id;
-        let userRequestInfo = await getUserRequestInfo(userId);
-
-        try {
+            let userId = msg.from.id;
+            let userRequestInfo = await getUserRequestInfo(userId);
             if (msgContent) {
                 await api.sendMessage(`${msgContent}`, {
                     parentMessageId: userRequestInfo.lastMessageId
@@ -70,24 +69,23 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
                     }
                     await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
                     await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
-                    await logger.sendMessage(telegramAdminId, msgContent + " - " + res.text + JSON.stringify(msg.from));
+                    await logger.sendMessage(telegramAdminId, `${username}: ${msgContent}\n\nChatGPT:${res.text}\nmsg obj: ${JSON.stringify(msg)}`);
                     clearInterval(typingInterval);
                     return;
                 });
             } else {
-                await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
-                await logger.sendMessage(telegramAdminId, `@${now} Logger: Message error ${JSON.stringify(msg)}`);
+                await bot.sendMessage(userId, "I could not process this message. !bot is only available in group chat.", { reply_to_message_id: msg.message_id });
+                await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${username} - !bot command. \n ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
-            }
-        } catch (e) {
-            // Tell the user there was an error
-            await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command.${e}`, { reply_to_message_id: msg.message_id });
-            await logger.sendMessage(telegramAdminId, `@${now} There was an error logged. ${e} ----- ${msgContent}`);
-            clearInterval(typingInterval);
-            return;
-        }
+            }   
+        } 
+    } catch (e) {
+        // Log error, send error msg
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${username}. ${e} ----- ${JSON.stringify(msg)}`);
         clearInterval(typingInterval);
+        return;
     }
 });
 
