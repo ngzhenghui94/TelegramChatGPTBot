@@ -14,7 +14,9 @@ moment.tz.setDefault("Asia/Singapore");
 dotenv.config()
 
 const bot = new TelegramBot(process.env.TELEGRAMBOTAPIKEY, { polling: true });
-const logger = new TelegramBot(process.env.LOGAPIKEY)
+if (process.env.LOGAPIKEY){
+    const logger = new TelegramBot(process.env.LOGAPIKEY)
+}
 const telegramAdminId = process.env.ADMINID
 const teleSripeProductKey = process.env.TELESTRIPEKEY
 const redis = new Redis(process.env.REDIS_URL);
