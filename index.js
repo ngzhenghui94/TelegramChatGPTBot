@@ -90,7 +90,8 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
     const userName = await getUsersnameFromMsg(msg)
-    if (msg.chat.type == "private") {
+    try {
+        if (msg.chat.type == "private") {
         // Logs the msg - for debugging
         console.log(JSON.stringify(msg));
         let now = moment().format("DD/MM/YY HH:mm");
@@ -118,38 +119,37 @@ bot.on('message', async (msg) => {
 
         let userId = msg.from.id;
         let userRequestInfo = await getUserRequestInfo(userId);
-
-        try {
-            if (msgContent) {
-                await api.sendMessage(`${msgContent}`, {
-                    parentMessageId: userRequestInfo.lastMessageId
-                }).then(async (res) => {
-                    if (res.detail.usage.total_tokens >= 1500) {
-                        userRequestInfo.lastMessageId = null;
-                        await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
-                    } else {
-                        userRequestInfo.lastMessageId = res.id;
-                    }
-                    await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
-                    await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
-                    await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT:${res.text}\nmsg obj: ${JSON.stringify(msg)}`);
-                    clearInterval(typingInterval);
-                    return;
-                });
-            } else {
-                await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
-                await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${userName} - !bot command. \n ${JSON.stringify(msg)}`);
+        if (msgContent) {
+            await api.sendMessage(`${msgContent}`, {
+                parentMessageId: userRequestInfo.lastMessageId
+            }).then(async (res) => {
+                if (res.detail.usage.total_tokens >= 1500) {
+                    userRequestInfo.lastMessageId = null;
+                    await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
+                } else {
+                    userRequestInfo.lastMessageId = res.id;
+                }
+                await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
+                await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
+                await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT:${res.text}\nmsg obj: ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
-            }
-        } catch (e) {
-            // Tell the user there was an error
-            await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
-            await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${userName}. ${e} ----- ${JSON.stringify(msg)}`);    
+            });
+
+        } else {
+            await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
+            await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${userName} - !bot command. \n ${JSON.stringify(msg)}`);
             clearInterval(typingInterval);
             return;
         }
+
+        }
+    } catch (e) {
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${userName}. ${e} ----- ${JSON.stringify(msg)}`);    
         clearInterval(typingInterval);
+        return;
     }
 });
 
