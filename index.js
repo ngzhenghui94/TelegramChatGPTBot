@@ -67,7 +67,7 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
                     }
                     await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
                     await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
-                    await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT:${res.text}\nmsg obj: ${JSON.stringify(msg)}`);
+                    await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
                     clearInterval(typingInterval);
                     return;
                 });
@@ -131,7 +131,7 @@ bot.on('message', async (msg) => {
                 }
                 await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
                 await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
-                await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT:${res.text}\nmsg obj: ${JSON.stringify(msg)}`);
+                await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
             });
