@@ -89,7 +89,7 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
 
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
-
+    const username = await getUsersnameFromMsg(msg)
     if (msg.chat.type == "private") {
         // Logs the msg - for debugging
         console.log(JSON.stringify(msg));
