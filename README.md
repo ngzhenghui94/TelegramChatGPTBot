@@ -18,7 +18,7 @@ sudo apt install redis-server
 ```
 4. Create a .env file in the following format.
 ```
-APIKEY=""
+OPENAPIKEY=""
 TELEGRAMBOTAPIKEY=""
 ADMINID=""
 LOGAPIKEY=""
