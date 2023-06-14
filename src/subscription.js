@@ -2,9 +2,9 @@ import { getUserRequestInfo } from "./userInfo.js";
 import { Redis } from 'ioredis';
 import { mongoClient, mongoDbName, mongoDbCollection } from "./mongodb.js"
 import { getUsersnameFromMsg } from "./userInfo.js"
+import { moment } from "moment-timezone"
 
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
-
 
 export const addUserToSubscription = async (msg, amount) => {
     try{    
@@ -16,9 +16,11 @@ export const addUserToSubscription = async (msg, amount) => {
         subObj.userId = userId
         subObj.isSubscriber = true
         subObj.subscriptionDate = Date.now();
+        subObj.subscriptionDateParsed = moment.unix(Date.now()).format("DD/MMM/YYYY HH:mm");
         if (amount == 1098) {
             subObj.subscriptionPackage = "Month"
             subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
+        
         } else if (amount == 9800) {
             subObj.subscriptionPackage = "Week"
             subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
@@ -26,6 +28,7 @@ export const addUserToSubscription = async (msg, amount) => {
             subObj.subscriptionPackage = "Custom"
             subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
         }
+        subObj.subScriptionEndDateParsed = moment.unix(subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
             { userId: userId }, 
