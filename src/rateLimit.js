@@ -56,14 +56,12 @@ export const rateLimit = async (msg) => {
     // Check if user is a subscriber and time
     if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
         const now = Date.now() 
-        if (subscriptionInfo.subscriptionPackage == "Year") {
-            if (now < subscriptionInfo.subScriptionEndDate) {
-                await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-                return false;
-            } else {
-                await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-            }
-        } 
+        if (now < subscriptionInfo.subScriptionEndDate) {
+            await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
+            return false;
+        } else {
+            await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
+        }
     }
 
     // Normal rate limiting check
