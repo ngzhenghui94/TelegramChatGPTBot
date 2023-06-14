@@ -89,10 +89,24 @@ export const removeUserFromSubscription = async (userId) => {
     }
 };
 
+export const getUserSubscription = async (userId) => {
+    try{
+        await mongoClient.connect()
+        const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).findOne({
+            "userId": parseInt(userId)
+        })
+        await mongoClient.close()
+        return result;
+    }catch (err){
+        console.log(err)
+    }
+}
+
 export const checkSubscription = async (msg) => {
-    const userInfo = await getUserRequestInfo(msg.chat.id)
-    if (userInfo.isSubscriber == true){
-        const subEndDate = userInfo.subScriptionEndDate
+    const subscriptionInfo = await getUserSubscription(msg.chat.id)
+
+    if (subscriptionInfo.isSubscriber == true){
+        const subEndDate = subscriptionInfo.subScriptionEndDate
         const timeDelta = Math.floor((subEndDate - Date.now())/1000)
         let returnMsg = ""
         if (timeDelta < 86400){
