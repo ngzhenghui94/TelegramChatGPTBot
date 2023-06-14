@@ -13,7 +13,7 @@ export const addUserToSubscription = async (msg, amount) => {
         console.log("Adding User as subscriber - " + userName)
         let subObj = {}
         subObj.username = userName
-        subObj.userId = userId
+        subObj.userId = parseInt(userId)
         subObj.isSubscriber = true
         subObj.subscriptionDate = Date.now();
         subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
@@ -31,7 +31,7 @@ export const addUserToSubscription = async (msg, amount) => {
         subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { userId: userId }, 
+            { "userId": parseInt(userId) }, 
             { $set: subObj }, 
             { upsert: true });
         await mongoClient.close();
@@ -47,7 +47,7 @@ export const addUserToSubscriptionById = async (userId, amount) => {
         console.log("Adding User as subscriber by ID - " + userId)
         let subObj = {}
         subObj.username = "Manually Added"
-        subObj.userId = userId
+        subObj.userId = parseInt(userId)
         subObj.isSubscriber = true
         subObj.subscriptionDate = Date.now();
         subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
@@ -65,7 +65,7 @@ export const addUserToSubscriptionById = async (userId, amount) => {
         subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { userId: userId }, 
+            { "userId": parseInt(userId) }, 
             { $set: subObj }, 
             { upsert: true });
         await mongoClient.close();
