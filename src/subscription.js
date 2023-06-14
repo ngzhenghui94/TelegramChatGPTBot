@@ -43,19 +43,16 @@ export const addUserToSubscription = async (msg, amount) => {
 
 export const removeUserFromSubscription = async (userId) => {
     try {
-        console.log("Removing User from Sub - " + userId)
-        const requestInfo = await getUserRequestInfo(userId);
-        requestInfo.isSubscriber = false;
-        requestInfo.subscriptionDate = null;
-        requestInfo.subscriptionPackage = null;
-        requestInfo.subScriptionEndDate = null;
-        console.log(JSON.stringify(requestInfo))
-        await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
-        return
+        console.log("Removing User from Sub - " + userId);
+        await mongoClient.connect();
+        await mongoClient.db(mongoDbName).collection(mongoDbCollection).deleteOne(
+            { userId: userId });
+        await mongoClient.close();
+        return;
     } catch (err) {
-        console.log(err)
+        console.log(err);
     }
-}
+};
 
 export const checkSubscription = async (msg) => {
     const userInfo = await getUserRequestInfo(msg.chat.id)
