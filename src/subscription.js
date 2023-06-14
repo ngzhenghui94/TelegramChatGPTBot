@@ -95,6 +95,7 @@ export const getUserSubscription = async (userId) => {
         const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).findOne({
             "userId": parseInt(userId)
         })
+        console.log(result)
         await mongoClient.close()
         return result;
     }catch (err){
@@ -103,25 +104,30 @@ export const getUserSubscription = async (userId) => {
 }
 
 export const checkSubscription = async (msg) => {
-    const subscriptionInfo = await getUserSubscription(parseInt(msg.chat.id))
-    console.log(subscriptionInfo)
-    if (subscriptionInfo.isSubscriber == true){
-        const subEndDate = subscriptionInfo.subScriptionEndDate
-        const timeDelta = Math.floor((subEndDate - Date.now())/1000)
-        let returnMsg = ""
-        if (timeDelta < 86400){
-            returnMsg = (timeDelta / 60 / 60).toFixed(2) + " hours."
-        } else if (timeDelta >= 86400) {
-            returnMsg = (timeDelta / 60 / 60 /24).toFixed(2) + " days."
+    try{
+        const subscriptionInfo = await getUserSubscription(parseInt(msg.chat.id))
+        console.log(subscriptionInfo)
+        if (subscriptionInfo.isSubscriber == true){
+            const subEndDate = subscriptionInfo.subScriptionEndDate
+            const timeDelta = Math.floor((subEndDate - Date.now())/1000)
+            let returnMsg = ""
+            if (timeDelta < 86400){
+                returnMsg = (timeDelta / 60 / 60).toFixed(2) + " hours."
+            } else if (timeDelta >= 86400) {
+                returnMsg = (timeDelta / 60 / 60 /24).toFixed(2) + " days."
+            }
+            return {
+                isSubscriber: true,
+                msg: "Your current subscription expiries in: " + returnMsg
+            }
+        } else{
+            return {
+                isSubscriber: false,
+                msg: "You do not have any active subscription."
+            }
         }
-        return {
-            isSubscriber: true,
-            msg: "Your current subscription expiries in: " + returnMsg
-        }
-    } else{
-        return {
-            isSubscriber: false,
-            msg: "You do not have any active subscription."
-        }
+    } catch (err) {
+        console.log(err)
     }
+
 }
