@@ -168,45 +168,54 @@ bot.onText(/^\/reset$/i, async (msg) => {
             await bot.sendMessage(msg.chat.id, "Convo reset.")
             await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
         })
+        return;
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. You may not have a convo to rest." + e)
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from) + " has failed.")
+        return;
     }
 });
 
 bot.onText(/^\/subscribe$/i, async (msg) => {
     const chatId = msg.chat.id;
-    // Send a message with a payment button
-    await bot.sendInvoice(
-        chatId,
-        'Telegram ChatGPT Subscription (30 Days)',
-        '30 days unlimited telegram ChatGPT query',
-        chatId,
-        teleSripeProductKey,
-        'USD',
-        [
-            {
-                label: 'Base',
-                amount: 1098
-            }
-        ]
-    ).then(async () => {
+    const hasSubscription = await checkSubscription(chatId)
+    if (hasSubscription.isSubscriber != true){
         // Send a message with a payment button
         await bot.sendInvoice(
             chatId,
-            'Telegram ChatGPT Subscription (1 Year)',
-            '1 year unlimited telegram ChatGPT query',
+            'Telegram ChatGPT Subscription (30 Days)',
+            '30 days unlimited telegram ChatGPT query',
             chatId,
             teleSripeProductKey,
             'USD',
             [
                 {
                     label: 'Base',
-                    amount: 9800
+                    amount: 1098
                 }
             ]
-        );
-    })
+        ).then(async () => {
+            // Send a message with a payment button
+            await bot.sendInvoice(
+                chatId,
+                'Telegram ChatGPT Subscription (1 Year)',
+                '1 year unlimited telegram ChatGPT query',
+                chatId,
+                teleSripeProductKey,
+                'USD',
+                [
+                    {
+                        label: 'Base',
+                        amount: 9800
+                    }
+                ]
+            );
+        })
+        return;
+    }else{
+        bot.sendMessage(chatId, "You have an active subscription.");
+        return;
+    }
 })
 
 
@@ -218,6 +227,7 @@ bot.on('pre_checkout_query', (query) => {
 
     // Send a message to notify the user that payment is being processed
     bot.sendMessage(chatId, 'Payment processing...');
+    return;
 });
 
 // Handle successful payment
@@ -228,6 +238,7 @@ bot.on('successful_payment', async (msg) => {
     await addUserToSubscription(msg, msg.successful_payment.total_amount)
     console.log(msg)
     bot.sendMessage(chatId, 'Payment successful');
+    return;
 })
 
 // Reset redis cache on reset command
@@ -238,6 +249,7 @@ bot.onText(/^\/resetredis$/i, async (msg) => {
     } else {
         await bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
     }
+    return;
 })
 
 bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
@@ -245,11 +257,14 @@ bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
         try {
             const returnMsg = await checkRedis()
             await bot.sendMessage(msg.chat.id, returnMsg);
+            return;
         } catch (err) {
             console.error(err);
+            return;
         }
     } else {
         await bot.sendMessage(msg.chat.id, "You do not have permission to reset cache.")
+        return;
     }
 });
 
@@ -259,11 +274,14 @@ bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
         try {
             const returnMsg = await checkUserOnRedis(telegramId)
             await bot.sendMessage(msg.chat.id, returnMsg);
+            return;
         } catch (err) {
             console.error(err);
+            return;
         }
     } else {
         await bot.sendMessage(msg.chat.id, "You do not have permission to check user.")
+        return;
     }
 });
 
@@ -271,6 +289,7 @@ bot.onText(/^\/subscription$/i, async (msg) => {
     const userId = msg.chat.id
     const subscriptionInfo = await checkSubscription(userId)
     await bot.sendMessage(msg.chat.id, subscriptionInfo.msg)
+    return;
 })
 
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
@@ -283,9 +302,11 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")
         }
+        return;
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
         await logger.sendMessage(telegramAdminId, "Error adding subscriber: " + e)
+        return;
     }
 })
 
@@ -298,9 +319,11 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")
         }
+        return;
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
         await logger.sendMessage(telegramAdminId, "Error removing subscriber: " + e)
+        return;
     }
 })
 
@@ -321,6 +344,7 @@ bot.onText(/^\/image/i, async (msg) => {
     await bot.sendPhoto(msg.chat.id, imagePath);
     // Remember to delete the image file after sending it.
     await fs.promises.unlink(imagePath);
+    return;
 })
 
 
@@ -338,6 +362,7 @@ bot.onText(/^\/start$/i, async (msg) => {
     `;
 
     await bot.sendMessage(msg.chat.id, welcomeText);
+    return;
 });
 
 bot.onText(/^\/help$/i, async (msg) => {
@@ -365,4 +390,5 @@ bot.onText(/^\/help$/i, async (msg) => {
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;
 
     await bot.sendMessage(msg.chat.id, helpText);
+    return;
 });
