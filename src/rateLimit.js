@@ -3,7 +3,7 @@ import Redis from "ioredis";
 import TelegramBot from "node-telegram-bot-api";
 import moment from "moment-timezone"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./userInfo.js";
-import { checkSubscription } from "./subscription.js"
+import { getUserSubscription } from "./subscription.js"
 dotenv.config();
 moment.tz.setDefault("Asia/Singapore");
 
@@ -51,8 +51,7 @@ export const rateLimit = async (msg) => {
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return true;
     }
-    const subscriptionInfo = await checkSubscription(userId)
-    console.log(subscriptionInfo)
+    const subscriptionInfo = await getUserSubscription(userId)
 
     // Check if user is a subscriber and time
     if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
