@@ -6,7 +6,7 @@ import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
-import { addUserToSubscription, checkSubscription, removeUserFromSubscription } from "./src/subscription.js"
+import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
 import fs from "fs"
@@ -277,7 +277,7 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
         const telegramId = parameter[1]
         const amountToAdd = parameter[2]
         if (msg.chat.id == telegramAdminId) {
-            await addUserToSubscription(msg, amountToAdd)
+            await addUserToSubscriptionById(telegramId, amountToAdd)
             await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + amountToAdd + " day subscription")
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")

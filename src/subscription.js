@@ -41,6 +41,40 @@ export const addUserToSubscription = async (msg, amount) => {
     }
 };
 
+
+export const addUserToSubscriptionById = async (userId, amount) => {
+    try{    
+        console.log("Adding User as subscriber by ID - " + userId)
+        let subObj = {}
+        subObj.username = "Manually Added"
+        subObj.userId = userId
+        subObj.isSubscriber = true
+        subObj.subscriptionDate = Date.now();
+        subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
+        if (amount == 1098) {
+            subObj.subscriptionPackage = "Month"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
+        
+        } else if (amount == 9800) {
+            subObj.subscriptionPackage = "Week"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
+        } else {
+            subObj.subscriptionPackage = "Custom"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
+        }
+        subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
+        await mongoClient.connect();
+        await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
+            { userId: userId }, 
+            { $set: subObj }, 
+            { upsert: true });
+        await mongoClient.close();
+        return;
+    } catch (err) {
+        console.log(err);
+    }
+};
+
 export const removeUserFromSubscription = async (userId) => {
     try {
         console.log("Removing User from Sub - " + userId);
