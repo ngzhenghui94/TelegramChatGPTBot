@@ -268,7 +268,8 @@ bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
 });
 
 bot.onText(/^\/subscription$/i, async (msg) => {
-    const subscriptionInfo = await checkSubscription(msg)
+    const userId = msg.chat.id
+    const subscriptionInfo = await checkSubscription(userId)
     await bot.sendMessage(msg.chat.id, subscriptionInfo.msg)
 })
 

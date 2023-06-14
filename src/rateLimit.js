@@ -3,6 +3,7 @@ import Redis from "ioredis";
 import TelegramBot from "node-telegram-bot-api";
 import moment from "moment-timezone"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./userInfo.js";
+import { checkSubscription } from "./subscription.js"
 dotenv.config();
 moment.tz.setDefault("Asia/Singapore");
 
@@ -22,12 +23,7 @@ function isUserIdInBlacklist(userId) {
 
 // UserInfo object (requestInfo)
 // requestInfo.count
-// requestInfo.isSubscriber
-// requestInfo.subscriptionDate
-// requestInfo.subscriptionEndDate
-// requestInfo.subscriptionPackage
 // requestInfo.blockTime
-// requestInfo.lastRequestTime
 
 // Rate limit function using redis
 export const rateLimit = async (msg) => {
@@ -55,42 +51,25 @@ export const rateLimit = async (msg) => {
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return true;
     }
+    const subscriptionInfo = await checkSubscription(userId)
 
     // Check if user is a subscriber and time
-    if (requestInfo.isSubscriber == true) {
-        const elapsedTime = Date.now() - requestInfo.subscriptionDate;
+    if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
+        const elapsedTime = Date.now() - subscriptionInfo.subscriptionDate;
         console.log(elapsedTime + " : " + monthhour)
-        if (requestInfo.subscriptionPackage == "Year") {
+        if (subscriptionInfo.subscriptionPackage == "Year") {
             if (elapsedTime < yearhour) {
                 await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.isSubscriber = true
-                requestInfo.count = 0;
-                requestInfo.blockTime = null;
-                requestInfo.subscriptionPackage = "Year"
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
                 return false;
             } else {
                 await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.count = 0;
-                requestInfo.isSubscriber = false
-                requestInfo.subscriptionDate = null;
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             }
-        } else if (elapsedTime.subscriptionPackage == "Month") {
+        } else if (subscriptionInfo.subscriptionPackage == "Month") {
             if (elapsedTime < monthhour) {
                 await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.isSubscriber = true
-                requestInfo.count = 0;
-                requestInfo.blockTime = null;
-                requestInfo.subscriptionPackage = "Month"
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
                 return false;
             } else {
                 await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-                requestInfo.count = 0;
-                requestInfo.isSubscriber = false
-                requestInfo.subscriptionDate = null;
-                await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             }
         }
     }
