@@ -1,10 +1,9 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const mongoDBUri = process.env.MONGODBURI;
-const uri = `mongodb+srv://danielninetyfour:1WAiXmMYgtgRInvy@tgchatgpt.mc7jksn.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-export const mongoClient = new MongoClient(uri, {
+export const mongoClient = new MongoClient(mongoDBUri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
