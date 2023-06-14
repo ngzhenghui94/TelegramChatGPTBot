@@ -1,5 +1,6 @@
 import { getUserRequestInfo } from "./userInfo.js";
 import { Redis } from 'ioredis';
+import { mongoClient } from "./mongodb.js"
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
 export const addUserToSubscription = async (userId, amount) => {
