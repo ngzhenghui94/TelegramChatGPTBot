@@ -5,10 +5,11 @@ import { getUsersnameFromMsg } from "./userInfo.js"
 
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
+
 export const addUserToSubscription = async (msg, amount) => {
     try{    
         let userId = msg.chat.id
-        let userName = getUsersnameFromMsg(msg)
+        let userName = await getUsersnameFromMsg(msg)
         console.log("Adding User as subscriber - " + userName)
         let subObj = {}
         subObj.username = userName
@@ -25,10 +26,12 @@ export const addUserToSubscription = async (msg, amount) => {
             subObj.subscriptionPackage = "Custom"
             subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
         }
+        await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
             { userId: userId }, 
             { $set: subObj }, 
             { upsert: true });
+        await mongoClient.close();
         return;
     } catch (err) {
         console.log(err);
