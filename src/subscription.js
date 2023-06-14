@@ -10,7 +10,7 @@ export const addUserToSubscription = async (msg, amount) => {
         let userId = msg.chat.id
         let userName = getUsersnameFromMsg(msg)
         console.log("Adding User as subscriber - " + userName)
-        let subObj;
+        let subObj = {}
         subObj.username = userName
         subObj.userId = userId
         subObj.isSubscriber = true
@@ -34,8 +34,6 @@ export const addUserToSubscription = async (msg, amount) => {
         console.log(err);
     }
 };
-
-
 
 export const removeUserFromSubscription = async (userId) => {
     try {
