@@ -105,7 +105,8 @@ export const getUserSubscription = async (userId) => {
 
 export const checkSubscription = async (msg) => {
     try{
-        const subscriptionInfo = await getUserSubscription(parseInt(msg.chat.id))
+        let userId = parseInt(msg.chat.id)
+        const subscriptionInfo = await getUserSubscription(userId)
         console.log(subscriptionInfo)
         if (subscriptionInfo.isSubscriber == true){
             const subEndDate = subscriptionInfo.subScriptionEndDate
@@ -128,6 +129,10 @@ export const checkSubscription = async (msg) => {
         }
     } catch (err) {
         console.log(err)
+        return {
+            isSubscriber: false,
+            msg: "You do not have any active subscription."
+        }
     }
 
 }
