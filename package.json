@@ -2,6 +2,8 @@
   "dependencies": {
     "chatgpt": "^5.1.2",
     "dotenv": "^16.0.3",
+    "ioredis": "^5.3.2",
+    "jimp": "^0.22.8",
     "moment-timezone": "^0.5.43",
     "mongodb": "^5.6.0",
     "mysql2": "^3.3.0",
