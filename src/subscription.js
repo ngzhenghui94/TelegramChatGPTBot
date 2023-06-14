@@ -108,7 +108,7 @@ export const checkSubscription = async (msg) => {
         let userId = parseInt(msg.chat.id)
         const subscriptionInfo = await getUserSubscription(userId)
         console.log(subscriptionInfo)
-        if (subscriptionInfo.isSubscriber == true){
+        if (subscriptionInfo && subscriptionInfo.isSubscriber == true){
             const subEndDate = subscriptionInfo.subScriptionEndDate
             const timeDelta = Math.floor((subEndDate - Date.now())/1000)
             let returnMsg = ""
