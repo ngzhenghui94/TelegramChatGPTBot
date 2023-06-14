@@ -95,7 +95,7 @@ export const getUserSubscription = async (userId) => {
         const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).findOne({
             "userId": parseInt(userId)
         })
-        console.log(result)
+        // console.log(result)
         await mongoClient.close()
         return result;
     }catch (err){

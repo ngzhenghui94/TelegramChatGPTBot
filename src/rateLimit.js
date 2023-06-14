@@ -56,7 +56,7 @@ export const rateLimit = async (msg) => {
     // Check if user is a subscriber and time
     if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
         const elapsedTime = Date.now() - subscriptionInfo.subscriptionDate;
-        console.log(elapsedTime + " : " + monthhour)
+        console.log(elapsedTime + " : " + monthhour + " : " + subscriptionInfo.subscriptionDate)
         if (subscriptionInfo.subscriptionPackage == "Year") {
             if (elapsedTime < yearhour) {
                 await logger.sendMessage(telegramAdminId, `Subscriber: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
