@@ -1,6 +1,8 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const mongoDBUri = process.env.MONGODBURI;
+export const mongoDbName = process.env.MONGODBNAME
+export const mongoDbCollection = process.env.MONGODBCOLLECTION
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 export const mongoClient = new MongoClient(mongoDBUri, {

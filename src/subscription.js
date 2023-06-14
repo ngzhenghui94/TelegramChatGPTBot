@@ -1,31 +1,41 @@
 import { getUserRequestInfo } from "./userInfo.js";
 import { Redis } from 'ioredis';
-import { mongoClient } from "./mongodb.js"
+import { mongoClient, mongoDbName, mongoDbCollection } from "./mongodb.js"
+import { getUsersnameFromMsg } from "./userInfo.js"
+
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
-export const addUserToSubscription = async (userId, amount) => {
-    try {
-        console.log("Adding User to Sub - " + userId)
-        const requestInfo = await getUserRequestInfo(userId);
-        requestInfo.isSubscriber = true;
-        requestInfo.subscriptionDate = Date.now();
+export const addUserToSubscription = async (msg, amount) => {
+    try{    
+        let userId = msg.chat.id
+        let userName = getUsersnameFromMsg(msg)
+        console.log("Adding User as subscriber - " + userName)
+        let subObj;
+        subObj.username = userName
+        subObj.userId = userId
+        subObj.isSubscriber = true
+        subObj.subscriptionDate = Date.now();
         if (amount == 1098) {
-            requestInfo.subscriptionPackage = "Month"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 2592000000
+            subObj.subscriptionPackage = "Month"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
         } else if (amount == 9800) {
-            requestInfo.subscriptionPackage = "Week"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + 31104000000
+            subObj.subscriptionPackage = "Week"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
         } else {
-            requestInfo.subscriptionPackage = "Custom"
-            requestInfo.subScriptionEndDate = requestInfo.subscriptionDate + (amount * 172800)
+            subObj.subscriptionPackage = "Custom"
+            subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
         }
-        console.log(JSON.stringify(requestInfo))
-        await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
-        return
+        await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
+            { userId: userId }, 
+            { $set: subObj }, 
+            { upsert: true });
+        return;
     } catch (err) {
-        console.log(err)
+        console.log(err);
     }
-}
+};
+
+
 
 export const removeUserFromSubscription = async (userId) => {
     try {

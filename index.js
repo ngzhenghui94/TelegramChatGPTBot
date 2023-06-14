@@ -219,12 +219,12 @@ bot.on('pre_checkout_query', (query) => {
 });
 
 // Handle successful payment
-bot.on('successful_payment', async (payment) => {
-    const chatId = payment.chat.id;
+bot.on('successful_payment', async (msg) => {
+    const chatId = msg.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
-    await addUserToSubscription(chatId, payment.successful_payment.total_amount)
-    console.log(payment)
+    await addUserToSubscription(msg, msg.successful_payment.total_amount)
+    console.log(msg)
     bot.sendMessage(chatId, 'Payment successful');
 })
 
@@ -275,10 +275,10 @@ bot.onText(/^\/subscription$/i, async (msg) => {
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
     try {
         const telegramId = parameter[1]
-        const daysToAdd = parameter[2]
+        const amountToAdd = parameter[2]
         if (msg.chat.id == telegramAdminId) {
-            await addUserToSubscription(telegramId, daysToAdd)
-            await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + daysToAdd + " day subscription")
+            await addUserToSubscription(msg, amountToAdd)
+            await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + amountToAdd + " day subscription")
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")
         }
@@ -357,7 +357,7 @@ bot.onText(/^\/help$/i, async (msg) => {
 
     1. /resetredis - Administrator command to reset Redis cache.
     2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
-    3. /addSubscriber <telegramId> <daysToAdd> - Administrator command to manually add a subscriber.
+    3. /addSubscriber <telegramId> <amountToAdd> - Administrator command to manually add a subscriber.
     4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
     `;
 
