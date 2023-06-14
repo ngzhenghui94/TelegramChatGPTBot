@@ -159,13 +159,15 @@ bot.on('message', async (msg) => {
 
 bot.onText(/^\/reset$/i, async (msg) => {
     try {
+        let userRequestInfo = await getUserRequestInfo(userId);
         await api.sendMessage("Reset my conversation", {
-            parentMessageId: objArray[msg.chat.id][0],
-            // lastSent: moment().format('YYYY-MM-DD HH:mm:ss')
+            parentMessageId: userRequestInfo.lastMessageId
+        }).then(async ()=>{
+            userRequestInfo.lastMessageId = null;
+            await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
+            await bot.sendMessage(msg.chat.id, "Convo reset.")
+            await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
         })
-        objArray[msg.chat.id] = []
-        await bot.sendMessage(msg.chat.id, "Convo reset.")
-        await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from))
     } catch (e) {
         await bot.sendMessage(msg.chat.id, "Sorry, there was an error. You may not have a convo to rest." + e)
         await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from) + " has failed.")
@@ -231,8 +233,6 @@ bot.on('successful_payment', async (msg) => {
 // Reset redis cache on reset command
 bot.onText(/^\/resetredis$/i, async (msg) => {
     if (msg.chat.id == telegramAdminId) {
-        idArray = []
-        objArray = []
         await resetRedis()
         await bot.sendMessage(msg.chat.id, "Cache reset.")
     } else {
