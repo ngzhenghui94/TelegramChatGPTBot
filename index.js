@@ -6,7 +6,7 @@ import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
-import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById } from "./src/subscription.js"
+import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById, disableSubscription } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
 import fs from "fs"
@@ -327,6 +327,26 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
     }
 })
 
+bot.on(/^\/disableSubscription (.+)/i, async (msg, parameter) => {
+    try {
+        if (msg.chat.id == telegramAdminId){
+            const result = await disableSubscription(msg.chat.id)
+            if (result){
+                await bot.sendMessage(msg.chat.id, "Subscription disabled.")
+            }else{
+                await bot.sendMessage(msg.chat.id, "Subscription disable fail")
+            }
+            
+        } else {
+            await bot.sendMessage(msg.chat.id, "Sorry you do not have permission to disable subscription.")
+            await logger.sendMessage(telegramAdminId, "Non-Admin tried to disable subscription " + e)
+            return;
+        }
+    } catch (err) {
+
+    }
+})
+
 bot.onText(/^\/image/i, async (msg) => {
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
@@ -385,6 +405,8 @@ bot.onText(/^\/help$/i, async (msg) => {
     2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
     3. /addSubscriber <telegramId> <amountToAdd> - Administrator command to manually add a subscriber.
     4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
+    5. /disableSubscriber <telegramId>
+    6. /enableSubscriber <telegramId>
     `;
 
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;

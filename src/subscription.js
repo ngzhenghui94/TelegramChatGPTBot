@@ -134,3 +134,20 @@ export const checkSubscription = async (userId) => {
     }
 
 }
+
+export const disableSubscription = async (userId) => {
+    try {
+        await mongoClient.connect();
+        let subObj = {};
+        subObj.isSubscriber = false;
+        const result = mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
+            { "userId": parseInt(userId) }, 
+            { $set: subObj }, 
+            { upsert: true });
+        await mongoClient.close();
+        console.log(result)
+        return result;
+    } catch (err) {
+
+    }
+}
