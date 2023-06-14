@@ -52,6 +52,7 @@ export const rateLimit = async (msg) => {
         return true;
     }
     const subscriptionInfo = await checkSubscription(userId)
+    console.log(subscriptionInfo)
 
     // Check if user is a subscriber and time
     if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
