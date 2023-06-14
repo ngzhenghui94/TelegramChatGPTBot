@@ -18,12 +18,14 @@ const logger = new TelegramBot(process.env.LOGAPIKEY)
 const telegramAdminId = process.env.ADMINID
 const teleSripeProductKey = process.env.TELESTRIPEKEY
 const redis = new Redis(process.env.REDIS_URL);
+const gptApiKey = process.env.OPENAPIKEY
+const gptModel = process.env.GPTMODEL
 
 const api = new ChatGPTAPI({
-    apiKey: process.env.OPENAPIKEY,
+    apiKey: gptApiKey,
     debug: false,
     completionParams: {
-        model: 'gpt-3.5-turbo-0613',
+        model: gptModel,
         temperature: 1,
         top_p: 0.8
     }
