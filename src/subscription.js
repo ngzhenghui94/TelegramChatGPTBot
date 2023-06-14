@@ -80,7 +80,7 @@ export const removeUserFromSubscription = async (userId) => {
         console.log("Removing User from Sub - " + userId);
         await mongoClient.connect();
         const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).deleteOne(
-            { "userId": userId.toString() });
+            { "userId": parseInt(userId) });
         await mongoClient.close();
         console.log(`Deleted ${result.deletedCount} item.`)
         return;
