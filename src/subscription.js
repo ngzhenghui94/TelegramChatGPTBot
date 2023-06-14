@@ -16,7 +16,7 @@ export const addUserToSubscription = async (msg, amount) => {
         subObj.userId = userId
         subObj.isSubscriber = true
         subObj.subscriptionDate = Date.now();
-        subObj.subscriptionDateParsed = moment.unix(Date.now()).format("DD/MMM/YYYY HH:mm");
+        subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
         if (amount == 1098) {
             subObj.subscriptionPackage = "Month"
             subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
@@ -28,7 +28,7 @@ export const addUserToSubscription = async (msg, amount) => {
             subObj.subscriptionPackage = "Custom"
             subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
         }
-        subObj.subScriptionEndDateParsed = moment.unix(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
+        subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
             { userId: userId }, 
