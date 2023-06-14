@@ -23,7 +23,7 @@ const api = new ChatGPTAPI({
     apiKey: process.env.OPENAPIKEY,
     debug: false,
     completionParams: {
-        model: 'gpt-3.5-turbo-16k',
+        model: 'gpt-3.5-turbo-0613',
         temperature: 1,
         top_p: 0.8
     }
