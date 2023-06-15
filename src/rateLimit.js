@@ -12,6 +12,8 @@ const logger = new TelegramBot(process.env.LOGAPIKEY);
 const telegramAdminId = parseInt(process.env.ADMINID);
 const whitelist = process.env.WHITELIST
 const blacklist = process.env.BLACKLIST
+const queryLimit = process.env.RATELIMITQNS
+const limitTimer = process.env.RATELIMITTIMER
 
 function isUserIdInWhitelist(userId) {
     return whitelist.split(',').includes(userId.toString());
@@ -24,14 +26,15 @@ function isUserIdInBlacklist(userId) {
 // UserInfo object (requestInfo)
 // requestInfo.count
 // requestInfo.blockTime
+// requestInfo.lastMessageId
+// requestInfo.isWhitelisted
+// requestInfo.isBlacklisted
 
 // Rate limit function using redis
 export const rateLimit = async (msg) => {
     const userId = msg.from.id
-    const rateLimitRequests = 5;
-    const timeWindow = 1200000 // 20 * 60 * 1000; // 20 minute in milliseconds
-    const monthhour = 2592000000 // 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-    const yearhour = 31104000000 // 12 * 30 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+    const rateLimitRequests = queryLimit
+    const timeWindow = limitTimer * 60 * 1000 // limitTimer is minutes -> milliseconds
     const requestInfo = await getUserRequestInfo(userId);
     const username = await getUsersnameFromMsg(msg)
 
@@ -51,6 +54,7 @@ export const rateLimit = async (msg) => {
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return true;
     }
+    
     const subscriptionInfo = await getUserSubscription(userId)
 
     // Check if user is a subscriber and time
