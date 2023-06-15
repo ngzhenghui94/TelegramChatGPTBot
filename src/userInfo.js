@@ -15,6 +15,7 @@ export const getUserRequestInfo = async (userId) => {
     return requestInfo;
 };
 
+// Helper function to get user's username from msg, if their privacy is set, set username to "Anonymous User"
 export const getUsersnameFromMsg = async (msg) => {
     let username = "";
     if (msg.from.first_name){

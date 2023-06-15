@@ -15,12 +15,11 @@ export const checkRedis = async () => {
             console.log(`Key: ${key}, Value: ${value}`);
             return `Key: ${key}, Value: ${value}\n`;
         });
-
         let values = await Promise.all(valuePromises);
         let returnMsg = values.join("");
         return returnMsg
     } catch (e) {
-        console.log("Check Redis Error: " + e)
+        console.err(`[checkRedis] Caught Error: ${e}`)
     }
 }
 
@@ -34,7 +33,7 @@ export const resetRedis = async () => {
             console.log("Redis database has been reset");
         });
     } catch (e) {
-        console.log("Reset Redis Error: " + e)
+        console.err(`[resetRedis] Caught Error: ${e}`)
     }
 }
 
@@ -49,12 +48,15 @@ export const checkUserOnRedis = async (telegramId) => {
             return `Key: user: ${telegramId} does not exist.\n`;
         }
     } catch (e) {
-        console.log("Check Redis Error: " + e);
+        console.err(`[checkUserOnRedis] Caught Error: ${e}`)
     }
 }
 
-// Rate limit function using redis
 export const removeFromRedisCache = async (userId) => {
-    await redis.del(`user: ${userId}`);
-    return;
+    try {
+        await redis.del(`user: ${userId}`);
+        return;
+    } catch (e) {
+        console.err(`[removeFromRedisCache] Caught Error: ${e}`)
+    }
 }
