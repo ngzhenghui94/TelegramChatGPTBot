@@ -299,7 +299,7 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
         const amountToAdd = parameter[2]
         if (msg.chat.id == telegramAdminId) {
             await createSubscriptionObject(telegramId, msg, amountToAdd)
-            await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + amountToAdd + " day subscription")
+            await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with $" + (amountToAdd / 10).toFixed(2) + " of subscription")
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")
         }

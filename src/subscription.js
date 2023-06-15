@@ -16,7 +16,7 @@ export const createSubscriptionObject = async (userId, msg, amount) => {
         const subscriptionTimes = {
             1098: 2629800000,
             9800: 31556926000,
-            default: amount * 2360655
+            default: amount * 2629800
         };
         subObj.subscriptionPackage = (amount == 1098 ? "Month" : (amount == 9800 ? "Year" : "Custom"));
         subObj.subScriptionEndDate = subscriptionDate + (subscriptionTimes[amount] || subscriptionTimes.default);
