@@ -6,7 +6,7 @@ import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
-import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById, disableSubscription } from "./src/subscription.js"
+import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
 import fs from "fs"
@@ -78,8 +78,8 @@ bot.onText(/!bot (.+)/, async (msg, match) => {
                 await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${userName} - !bot command. \n ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
-            }   
-        } 
+            }
+        }
     } catch (e) {
         // Log error, send error msg
         await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
@@ -94,62 +94,62 @@ bot.on('message', async (msg) => {
     const userName = await getUsersnameFromMsg(msg)
     try {
         if (msg.chat.type == "private") {
-        // Logs the msg - for debugging
-        console.log(JSON.stringify(msg));
-        let now = moment().format("DD/MM/YY HH:mm");
-        await bot.sendChatAction(msg.chat.id, "typing");
-        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
-        let msgContent;
-        if (msg.caption) {
-            msgContent = msg.caption;
-        } else if (msg.text) {
-            if (msg.text.startsWith('/')) {
-                clearInterval(typingInterval);
-                return;
-            } else {
-                msgContent = msg.text;
-            }
-        }
-
-        // Check if the user is rate-limited
-        if (await rateLimit(msg)) {
-            await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 20 minute. Please wait and try again later or /subscribe for unlimited query");
-            await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} has reached rate limit. ${JSON.stringify(msg)}`);
-            clearInterval(typingInterval);
-            return;
-        }
-
-        let userId = msg.from.id;
-        let userRequestInfo = await getUserRequestInfo(userId);
-        if (msgContent) {
-            await api.sendMessage(`${msgContent}`, {
-                parentMessageId: userRequestInfo.lastMessageId
-            }).then(async (res) => {
-                if (res.detail.usage.total_tokens >= 1500) {
-                    userRequestInfo.lastMessageId = null;
-                    await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
+            // Logs the msg - for debugging
+            console.log(JSON.stringify(msg));
+            let now = moment().format("DD/MM/YY HH:mm");
+            await bot.sendChatAction(msg.chat.id, "typing");
+            const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+            let msgContent;
+            if (msg.caption) {
+                msgContent = msg.caption;
+            } else if (msg.text) {
+                if (msg.text.startsWith('/')) {
+                    clearInterval(typingInterval);
+                    return;
                 } else {
-                    userRequestInfo.lastMessageId = res.id;
+                    msgContent = msg.text;
                 }
-                await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
-                await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
-                await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
+            }
+
+            // Check if the user is rate-limited
+            if (await rateLimit(msg)) {
+                await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 20 minute. Please wait and try again later or /subscribe for unlimited query");
+                await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} has reached rate limit. ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
-            });
+            }
 
-        } else {
-            await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
-            await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${userName} - !bot command. \n ${JSON.stringify(msg)}`);
-            clearInterval(typingInterval);
-            return;
-        }
+            let userId = msg.from.id;
+            let userRequestInfo = await getUserRequestInfo(userId);
+            if (msgContent) {
+                await api.sendMessage(`${msgContent}`, {
+                    parentMessageId: userRequestInfo.lastMessageId
+                }).then(async (res) => {
+                    if (res.detail.usage.total_tokens >= 1500) {
+                        userRequestInfo.lastMessageId = null;
+                        await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
+                    } else {
+                        userRequestInfo.lastMessageId = res.id;
+                    }
+                    await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
+                    await bot.sendMessage(userId, res.text, { reply_to_message_id: msg.message_id });
+                    await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
+                    clearInterval(typingInterval);
+                    return;
+                });
+
+            } else {
+                await bot.sendMessage(userId, "I could not process this message.", { reply_to_message_id: msg.message_id });
+                await logger.sendMessage(telegramAdminId, `At: ${now}, unable to process msg from ${userName} - !bot command. \n ${JSON.stringify(msg)}`);
+                clearInterval(typingInterval);
+                return;
+            }
 
         }
     } catch (e) {
         // Tell the user there was an error
         await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
-        await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${userName}. ${e} ----- ${JSON.stringify(msg)}`);    
+        await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${userName}. ${e} ----- ${JSON.stringify(msg)}`);
         clearInterval(typingInterval);
         return;
     }
@@ -162,7 +162,7 @@ bot.onText(/^\/reset$/i, async (msg) => {
         let userRequestInfo = await getUserRequestInfo(userId);
         await api.sendMessage("Reset my conversation", {
             parentMessageId: userRequestInfo.lastMessageId
-        }).then(async ()=>{
+        }).then(async () => {
             userRequestInfo.lastMessageId = null;
             await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
             await bot.sendMessage(msg.chat.id, "Convo reset.")
@@ -179,7 +179,7 @@ bot.onText(/^\/reset$/i, async (msg) => {
 bot.onText(/^\/subscribe$/i, async (msg) => {
     const chatId = msg.chat.id;
     const hasSubscription = await checkSubscription(chatId)
-    if (hasSubscription.isSubscriber != true){
+    if (hasSubscription.isSubscriber != true) {
         // Send a message with a payment button
         await bot.sendInvoice(
             chatId,
@@ -212,7 +212,7 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
             );
         })
         return;
-    }else{
+    } else {
         bot.sendMessage(chatId, "You have an active subscription.");
         return;
     }
@@ -329,21 +329,68 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
 
 bot.on(/^\/disableSubscription (.+)/i, async (msg, parameter) => {
     try {
-        if (msg.chat.id == telegramAdminId){
-            const result = await disableSubscription(msg.chat.id)
-            if (result){
-                await bot.sendMessage(msg.chat.id, "Subscription disabled.")
-            }else{
-                await bot.sendMessage(msg.chat.id, "Subscription disable fail")
+        if (msg.chat.id == telegramAdminId) {
+            const telegramId = parameter[1]
+            const result = await setSubscriptionState(telegramId, false)
+            if (result) {
+                await bot.sendMessage(msg.chat.id, "Subscription disabled for id: " + telegramId)
+            } else {
+                await bot.sendMessage(msg.chat.id, "Subscription disable fail for id: " + telegramId)
             }
-            
         } else {
             await bot.sendMessage(msg.chat.id, "Sorry you do not have permission to disable subscription.")
             await logger.sendMessage(telegramAdminId, "Non-Admin tried to disable subscription " + e)
             return;
         }
     } catch (err) {
+        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        await logger.sendMessage(telegramAdminId, "Error disabling subscription " + e)
+        return
+    }
+})
 
+bot.on(/^\/enableSubscription (.+)/i, async (msg, parameter) => {
+    try {
+        if (msg.chat.id == telegramAdminId) {
+            const telegramId = parameter[1]
+            const result = await setSubscriptionState(telegramId, true)
+            if (result) {
+                await bot.sendMessage(msg.chat.id, "Subscription enabled for id: " + telegramId)
+            } else {
+                await bot.sendMessage(msg.chat.id, "Subscription enabled fail for id: " + telegramId)
+            }
+        } else {
+            await bot.sendMessage(msg.chat.id, "Sorry you do not have permission to enabled subscription.")
+            await logger.sendMessage(telegramAdminId, "Non-Admin tried to enabled subscription " + e)
+            return;
+        }
+    } catch (err) {
+        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        await logger.sendMessage(telegramAdminId, "Error enabling subscription " + e)
+        return
+    }
+})
+
+bot.onText(/^\/getAllSubscription$/i, async (msg) => {
+    try {
+        if (msg.chat.id == telegramAdminId) {
+            const results = await getAllSubscription()
+
+            const returnSub = results.map(result => ({
+                username: result.username,
+                userId: result.userId,
+                subscriptionEndDateParsed: result.subscriptionEndDateParsed
+            }));
+
+            console.log(returnSub)
+            await bot.sendMessage(msg.chat.id, JSON.stringify(returnSub))
+        } else {
+            await bot.sendMessage(msg.chat.id, "Sorry you do not have permission to check all the subscriptions")
+        }
+    } catch (e) {
+        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        await logger.sendMessage(telegramAdminId, "Error querying subscription " + e)
+        return
     }
 })
 

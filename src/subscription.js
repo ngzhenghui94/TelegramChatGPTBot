@@ -7,7 +7,7 @@ import moment from "moment-timezone"
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
 export const addUserToSubscription = async (msg, amount) => {
-    try{    
+    try {
         let userId = msg.chat.id
         let userName = await getUsersnameFromMsg(msg)
         console.log("Adding User as subscriber - " + userName)
@@ -20,7 +20,7 @@ export const addUserToSubscription = async (msg, amount) => {
         if (amount == 1098) {
             subObj.subscriptionPackage = "Month"
             subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
-        
+
         } else if (amount == 9800) {
             subObj.subscriptionPackage = "Week"
             subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
@@ -31,8 +31,8 @@ export const addUserToSubscription = async (msg, amount) => {
         subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { "userId": parseInt(userId) }, 
-            { $set: subObj }, 
+            { "userId": parseInt(userId) },
+            { $set: subObj },
             { upsert: true });
         await mongoClient.close();
         return;
@@ -43,7 +43,7 @@ export const addUserToSubscription = async (msg, amount) => {
 
 
 export const addUserToSubscriptionById = async (userId, amount) => {
-    try{    
+    try {
         console.log("Adding User as subscriber by ID - " + userId)
         let subObj = {}
         subObj.username = "Manually Added"
@@ -53,20 +53,20 @@ export const addUserToSubscriptionById = async (userId, amount) => {
         subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
         if (amount == 1098) {
             subObj.subscriptionPackage = "Month"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
-        
+            subObj.subscriptionEndDate = subObj.subscriptionDate + 2592000000
+
         } else if (amount == 9800) {
             subObj.subscriptionPackage = "Week"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
+            subObj.subscriptionEndDate = subObj.subscriptionDate + 31104000000
         } else {
             subObj.subscriptionPackage = "Custom"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
+            subObj.subscriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
         }
-        subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
+        subObj.subscriptionEndDateParsed = moment(subObj.subscriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { "userId": parseInt(userId) }, 
-            { $set: subObj }, 
+            { "userId": parseInt(userId) },
+            { $set: subObj },
             { upsert: true });
         await mongoClient.close();
         return;
@@ -90,7 +90,7 @@ export const removeUserFromSubscription = async (userId) => {
 };
 
 export const getUserSubscription = async (userId) => {
-    try{
+    try {
         await mongoClient.connect()
         const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).findOne({
             "userId": parseInt(userId)
@@ -98,28 +98,28 @@ export const getUserSubscription = async (userId) => {
         // console.log(result)
         await mongoClient.close()
         return result;
-    }catch (err){
+    } catch (err) {
         console.log(err)
     }
 }
 
 export const checkSubscription = async (userId) => {
-    try{
+    try {
         const subscriptionInfo = await getUserSubscription(parseInt(userId))
-        if (subscriptionInfo && subscriptionInfo.isSubscriber == true){
+        if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
             const subEndDate = subscriptionInfo.subScriptionEndDate
-            const timeDelta = Math.floor((subEndDate - Date.now())/1000)
+            const timeDelta = Math.floor((subEndDate - Date.now()) / 1000)
             let returnMsg = ""
-            if (timeDelta < 86400){
+            if (timeDelta < 86400) {
                 returnMsg = (timeDelta / 60 / 60).toFixed(2) + " hours."
             } else if (timeDelta >= 86400) {
-                returnMsg = (timeDelta / 60 / 60 /24).toFixed(2) + " days."
+                returnMsg = (timeDelta / 60 / 60 / 24).toFixed(2) + " days."
             }
             return {
                 isSubscriber: true,
                 msg: "Your current subscription expiries in: " + returnMsg
             }
-        } else{
+        } else {
             return {
                 isSubscriber: false,
                 msg: "You do not have any active subscription."
@@ -135,19 +135,28 @@ export const checkSubscription = async (userId) => {
 
 }
 
-export const disableSubscription = async (userId) => {
+export const setSubscriptionState = async (userId, state) => {
     try {
         await mongoClient.connect();
         let subObj = {};
-        subObj.isSubscriber = false;
-        const result = mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { "userId": parseInt(userId) }, 
-            { $set: subObj }, 
-            { upsert: true });
+        subObj.isSubscriber = state;
+        const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
+            { "userId": parseInt(userId) },
+            { $set: subObj });
         await mongoClient.close();
-        console.log(result)
         return result;
     } catch (err) {
+        console.log(err)
+    }
+}
 
+export const getAllSubscription = async () => {
+    try {
+        await mongoClient.connect();
+        const result = await mongoClient.db(mongoDbName).collection(mongoDbCollection).find({}).toArray();
+        await mongoClient.close();
+        return result;
+    } catch (err) {
+        console.log(err)
     }
 }
