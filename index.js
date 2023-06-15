@@ -6,7 +6,7 @@ import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/utilities.js"
-import { addUserToSubscription, checkSubscription, removeUserFromSubscription, addUserToSubscriptionById, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
+import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
 import fs from "fs"
@@ -113,7 +113,7 @@ bot.on('message', async (msg) => {
 
             // Check if the user is rate-limited
             if (await rateLimit(msg)) {
-                await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 20 minute. Please wait and try again later or /subscribe for unlimited query");
+                await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 10 questions please wait 30 minute. Please wait and try again later or /subscribe for unlimited query");
                 await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} has reached rate limit. ${JSON.stringify(msg)}`);
                 clearInterval(typingInterval);
                 return;
@@ -179,6 +179,7 @@ bot.onText(/^\/reset$/i, async (msg) => {
 bot.onText(/^\/subscribe$/i, async (msg) => {
     const chatId = msg.chat.id;
     const hasSubscription = await checkSubscription(chatId)
+    console.log(`Subscribe:  ${JSON.stringify(msg)}`)
     if (hasSubscription.isSubscriber != true) {
         // Send a message with a payment button
         await bot.sendInvoice(
@@ -224,7 +225,7 @@ bot.on('pre_checkout_query', (query) => {
 
     // Answer the pre-checkout query to confirm payment
     bot.answerPreCheckoutQuery(query.id, true);
-
+    console.log(`Pre_Checkout_Query:  ${JSON.stringify(msg)}`)
     // Send a message to notify the user that payment is being processed
     bot.sendMessage(chatId, 'Payment processing...');
     return;
@@ -232,12 +233,12 @@ bot.on('pre_checkout_query', (query) => {
 
 // Handle successful payment
 bot.on('successful_payment', async (msg) => {
-    const chatId = msg.chat.id;
+    const userId = msg.chat.id;
     // Add the chatId into mysql db
     // addChatId(chatId)
-    await addUserToSubscription(msg, msg.successful_payment.total_amount)
-    console.log(msg)
-    bot.sendMessage(chatId, 'Payment successful');
+    await createSubscriptionObject(userId, msg, msg.successful_payment.total_amount)
+    console.log(`Successful_Payment:  ${JSON.stringify(msg)}`)
+    bot.sendMessage(userId, 'Payment successful');
     return;
 })
 
@@ -297,7 +298,7 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
         const telegramId = parameter[1]
         const amountToAdd = parameter[2]
         if (msg.chat.id == telegramAdminId) {
-            await addUserToSubscriptionById(telegramId, amountToAdd)
+            await createSubscriptionObject(telegramId, msg, amountToAdd)
             await bot.sendMessage(msg.chat.id, "Added Telegram ID: " + telegramId + " with " + amountToAdd + " day subscription")
         } else {
             await bot.sendMessage(msg.chat.id, "You do not have permission.")
@@ -397,7 +398,7 @@ bot.onText(/^\/getAllSubscription$/i, async (msg) => {
 bot.onText(/^\/image/i, async (msg) => {
     // Check if the user is rate-limited
     if (await rateLimit(msg)) {
-        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 5 questions please wait 10 minute. Please wait and try again later or /subscribe.");
+        await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 10 questions please wait 30 minute. Please wait and try again later or /subscribe.");
         await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
         return;
     }
@@ -454,6 +455,7 @@ bot.onText(/^\/help$/i, async (msg) => {
     4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
     5. /disableSubscriber <telegramId>
     6. /enableSubscriber <telegramId>
+    7. /getAllSubscription
     `;
 
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;

@@ -6,28 +6,24 @@ import moment from "moment-timezone"
 
 const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
-export const addUserToSubscription = async (msg, amount) => {
+export const createSubscriptionObject = async (userId, msg, amount) => {
     try {
-        let userId = msg.chat.id
-        let userName = await getUsersnameFromMsg(msg)
-        console.log("Adding User as subscriber - " + userName)
-        let subObj = {}
-        subObj.username = userName
-        subObj.userId = parseInt(userId)
-        subObj.isSubscriber = true
-        subObj.subscriptionDate = Date.now();
-        subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
-        if (amount == 1098) {
-            subObj.subscriptionPackage = "Month"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + 2592000000
-
-        } else if (amount == 9800) {
-            subObj.subscriptionPackage = "Week"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + 31104000000
-        } else {
-            subObj.subscriptionPackage = "Custom"
-            subObj.subScriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
-        }
+        const userName = await getUsersnameFromMsg(msg);
+        const subscriptionDate = Date.now();
+        let subObj = {
+            username: userName,
+            userId: parseInt(userId),
+            isSubscriber: true,
+            subscriptionDate: subscriptionDate,
+            subscriptionDateParsed: moment(subscriptionDate).format("DD/MMM/YYYY HH:mm"),
+        };
+        const subscriptionTimes = {
+            1098: 2629800000,
+            9800: 31556926000,
+            default: amount * 2360655
+        };
+        subObj.subscriptionPackage = (amount == 1098 ? "Month" : (amount == 9800 ? "Year" : "Custom"));
+        subObj.subScriptionEndDate = subscriptionDate + (subscriptionTimes[amount] || subscriptionTimes.default);
         subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
@@ -37,43 +33,11 @@ export const addUserToSubscription = async (msg, amount) => {
         await mongoClient.close();
         return;
     } catch (err) {
-        console.log(err);
+        console.log(err)
     }
-};
 
+}
 
-export const addUserToSubscriptionById = async (userId, amount) => {
-    try {
-        console.log("Adding User as subscriber by ID - " + userId)
-        let subObj = {}
-        subObj.username = "Manually Added"
-        subObj.userId = parseInt(userId)
-        subObj.isSubscriber = true
-        subObj.subscriptionDate = Date.now();
-        subObj.subscriptionDateParsed = moment(Date.now()).format("DD/MMM/YYYY HH:mm");
-        if (amount == 1098) {
-            subObj.subscriptionPackage = "Month"
-            subObj.subscriptionEndDate = subObj.subscriptionDate + 2592000000
-
-        } else if (amount == 9800) {
-            subObj.subscriptionPackage = "Week"
-            subObj.subscriptionEndDate = subObj.subscriptionDate + 31104000000
-        } else {
-            subObj.subscriptionPackage = "Custom"
-            subObj.subscriptionEndDate = subObj.subscriptionDate + (amount * 2360655)
-        }
-        subObj.subscriptionEndDateParsed = moment(subObj.subscriptionEndDate).format("DD/MMM/YYYY HH:mm");
-        await mongoClient.connect();
-        await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
-            { "userId": parseInt(userId) },
-            { $set: subObj },
-            { upsert: true });
-        await mongoClient.close();
-        return;
-    } catch (err) {
-        console.log(err);
-    }
-};
 
 export const removeUserFromSubscription = async (userId) => {
     try {
