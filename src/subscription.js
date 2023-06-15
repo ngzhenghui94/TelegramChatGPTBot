@@ -1,10 +1,6 @@
-import { getUserRequestInfo } from "./userInfo.js";
-import { Redis } from 'ioredis';
 import { mongoClient, mongoDbName, mongoDbCollection } from "./mongodb.js"
 import { getUsersnameFromMsg } from "./userInfo.js"
 import moment from "moment-timezone"
-
-const redis = new Redis(process.env.REDIS_URL); // initialize Redis client 
 
 export const createSubscriptionObject = async (userId, msg, amount) => {
     try {
