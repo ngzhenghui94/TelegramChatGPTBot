@@ -12,7 +12,6 @@ export const mongoClient = new MongoClient(mongoDBUri, {
     deprecationErrors: true,
   }
 });
-
 // Start-up test connectivity to MongoDb
 async function run() {
   try {
@@ -22,7 +21,7 @@ async function run() {
     await mongoClient.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } catch (err) {
-    console.err("Unable to connect to MongoDB. Please ensure the .env file is configured correctly.")
+    console.error("Unable to connect to MongoDB. Please ensure the .env file is configured correctly.")
   } finally {
     // Ensures that the client will close when you finish/error
     await mongoClient.close();

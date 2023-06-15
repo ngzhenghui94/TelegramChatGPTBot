@@ -287,10 +287,14 @@ bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
 });
 
 bot.onText(/^\/subscription$/i, async (msg) => {
-    const userId = msg.chat.id
-    const subscriptionInfo = await checkSubscription(userId)
-    await bot.sendMessage(msg.chat.id, subscriptionInfo.msg)
-    return;
+    try {
+        const userId = msg.chat.id
+        const subscriptionInfo = await checkSubscription(userId)
+        await bot.sendMessage(msg.chat.id, subscriptionInfo.msg)
+        return;
+    } catch (err) {
+        console.error(`[/subscription] Caught Error: ${e}`)
+    }
 })
 
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {

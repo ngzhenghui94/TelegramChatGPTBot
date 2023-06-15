@@ -19,7 +19,7 @@ export const checkRedis = async () => {
         let returnMsg = values.join("");
         return returnMsg
     } catch (e) {
-        console.err(`[checkRedis] Caught Error: ${e}`)
+        console.error(`[checkRedis] Caught Error: ${e}`)
     }
 }
 
@@ -27,13 +27,13 @@ export const resetRedis = async () => {
     try {
         redis.flushdb((err, result) => {
             if (err) {
-                console.error(err);
+                console.erroror(err);
                 return;
             }
             console.log("Redis database has been reset");
         });
     } catch (e) {
-        console.err(`[resetRedis] Caught Error: ${e}`)
+        console.error(`[resetRedis] Caught Error: ${e}`)
     }
 }
 
@@ -48,7 +48,7 @@ export const checkUserOnRedis = async (telegramId) => {
             return `Key: user: ${telegramId} does not exist.\n`;
         }
     } catch (e) {
-        console.err(`[checkUserOnRedis] Caught Error: ${e}`)
+        console.error(`[checkUserOnRedis] Caught Error: ${e}`)
     }
 }
 
@@ -57,6 +57,6 @@ export const removeFromRedisCache = async (userId) => {
         await redis.del(`user: ${userId}`);
         return;
     } catch (e) {
-        console.err(`[removeFromRedisCache] Caught Error: ${e}`)
+        console.error(`[removeFromRedisCache] Caught Error: ${e}`)
     }
 }

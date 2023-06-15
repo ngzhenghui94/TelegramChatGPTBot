@@ -15,7 +15,7 @@ export const getUserRequestInfo = async (userId) => {
         }
         return requestInfo;
     } catch (err) {
-        console.err(`[getUserRequestInfo] Caught Error: ${e}`)
+        console.error(`[getUserRequestInfo] Caught Error: ${e}`)
     }
 };
 
@@ -32,6 +32,6 @@ export const getUsersnameFromMsg = async (msg) => {
         }
         return username;
     } catch (err) {
-        console.err(`[getUsersnameFromMsg] Caught Error: ${e}`)
+        console.error(`[getUsersnameFromMsg] Caught Error: ${e}`)
     }
 }
