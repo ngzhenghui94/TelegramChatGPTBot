@@ -13,6 +13,6 @@ export const queryStableDiffusion = async (data) => {
         const result = await response.blob();
         return result;
     } catch (err) {
-        console.error(`[queryStableDiffusion] Caught Error: ${e}`)
+        console.error(`[queryStableDiffusion] Caught Error: ${err}`)
     }
 }

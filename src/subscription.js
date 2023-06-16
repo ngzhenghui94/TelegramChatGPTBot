@@ -12,6 +12,9 @@ export const createSubscriptionObject = async (userId, msg, amount) => {
             isSubscriber: true,
             subscriptionDate: subscriptionDate,
             subscriptionDateParsed: moment(subscriptionDate).format("DD/MMM/YYYY HH:mm"),
+            subscriptionEndDate: null,
+            subscriptionEndDateParsed: null,
+            subscriptionPackage: null
         };
         const subscriptionTimes = {
             1098: 2629800000,
@@ -19,8 +22,8 @@ export const createSubscriptionObject = async (userId, msg, amount) => {
             default: amount * 2629800
         };
         subObj.subscriptionPackage = (amount == 1098 ? "Month" : (amount == 9800 ? "Year" : "Custom"));
-        subObj.subScriptionEndDate = subscriptionDate + (subscriptionTimes[amount] || subscriptionTimes.default);
-        subObj.subScriptionEndDateParsed = moment(subObj.subScriptionEndDate).format("DD/MMM/YYYY HH:mm");
+        subObj.subscriptionEndDate = subscriptionDate + (subscriptionTimes[amount] || subscriptionTimes.default);
+        subObj.subscriptionEndDateParsed = moment(subObj.subscriptionEndDate).format("DD/MMM/YYYY HH:mm");
         await mongoClient.connect();
         await mongoClient.db(mongoDbName).collection(mongoDbCollection).updateOne(
             { "userId": parseInt(userId) },
@@ -29,7 +32,7 @@ export const createSubscriptionObject = async (userId, msg, amount) => {
         await mongoClient.close();
         return;
     } catch (err) {
-        console.error(`[createSubscriptionObject] Caught Error: ${e}`)
+        console.error(`[createSubscriptionObject] Caught Error: ${err}`)
     }
 }
 
@@ -44,7 +47,7 @@ export const removeUserFromSubscription = async (userId) => {
         console.log(`Deleted ${result.deletedCount} item.`)
         return;
     } catch (err) {
-        console.error(`[removeUserFromSubscription] Caught Error: ${e}`)
+        console.error(`[removeUserFromSubscription] Caught Error: ${err}`)
     }
 };
 
@@ -58,7 +61,7 @@ export const getUserSubscription = async (userId) => {
         await mongoClient.close()
         return result;
     } catch (err) {
-        console.error(`[getUserSubscription] Caught Error: ${e}`)
+        console.error(`[getUserSubscription] Caught Error: ${err}`)
     }
 }
 
@@ -66,7 +69,7 @@ export const checkSubscription = async (userId) => {
     try {
         const subscriptionInfo = await getUserSubscription(parseInt(userId))
         if (subscriptionInfo && subscriptionInfo.isSubscriber == true) {
-            const subEndDate = subscriptionInfo.subScriptionEndDate
+            const subEndDate = subscriptionInfo.subscriptionEndDate
             const timeDelta = Math.floor((subEndDate - Date.now()) / 1000)
             let returnMsg = ""
             if (timeDelta < 86400) {
@@ -85,7 +88,7 @@ export const checkSubscription = async (userId) => {
             }
         }
     } catch (err) {
-        console.error(`[checkSubscription] Caught Error: ${e}`)
+        console.error(`[checkSubscription] Caught Error: ${err}`)
         return {
             isSubscriber: false,
             msg: "You do not have any active subscription."
@@ -105,7 +108,7 @@ export const setSubscriptionState = async (userId, state) => {
         await mongoClient.close();
         return result;
     } catch (err) {
-        console.error(`[setSubscriptionState] Caught Error: ${e}`)
+        console.error(`[setSubscriptionState] Caught Error: ${err}`)
     }
 }
 
@@ -116,6 +119,6 @@ export const getAllSubscription = async () => {
         await mongoClient.close();
         return result;
     } catch (err) {
-        console.error(`[getAllSubscription] Caught Error: ${e}`)
+        console.error(`[getAllSubscription] Caught Error: ${err}`)
     }
 }

@@ -19,7 +19,7 @@ function isUserIdInWhitelist(userId) {
     try {
         return whitelist.split(',').includes(userId.toString());
     } catch (err) {
-        console.error(`[isUserIdInWhitelist] Caught Error: ${e}`)
+        console.error(`[isUserIdInWhitelist] Caught Error: ${err}`)
     }
 }
 
@@ -27,7 +27,7 @@ function isUserIdInBlacklist(userId) {
     try {
         return blacklist.split(',').includes(userId.toString());
     } catch (err) {
-        console.error(`[isUserIdInBlacklist] Caught Error: ${e}`)
+        console.error(`[isUserIdInBlacklist] Caught Error: ${err}`)
     }
 }
 
@@ -105,7 +105,7 @@ export const rateLimit = async (msg) => {
         await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         return false;
     } catch (err) {
-        console.error(`[rateLimit] Caught Error: ${e}`)
+        console.error(`[rateLimit] Caught Error: ${err}`)
     }
 }
 
