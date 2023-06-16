@@ -9,6 +9,12 @@ dotenv.config()
 const redis = new Redis(process.env.REDIS_URL);
 const telegramAdminId = process.env.ADMINID;
 
+export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, { text: "Surprise", callback_data: "Surprise" }, { text: "Elaborate", callback_data: "Explain" }],
+[],
+[],
+[]]
+
+
 export const blobToBuffer = async (blob) => {
     const arrayBuffer = await blob.arrayBuffer();
     return Buffer.from(arrayBuffer);
@@ -86,6 +92,8 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
     const userRequestInfo = await getUserRequestInfo(userId);
     const maxTeleMessageLength = 3096;
     const now = moment().format("DD/MM/YY HH:mm");
+    let newInlineKeyboardOpts = JSON.parse(JSON.stringify(inlineKeyboardOpts));
+    
 
     console.log(JSON.stringify(msg))
     try {
@@ -119,7 +127,7 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
         await api.sendMessage(`${msgContent}`, {
             parentMessageId: userRequestInfo.lastMessageId
         }).then(async (res) => {
-
+            let chatGPTAns = res.text;
 
             if (res.detail.usage.total_tokens >= 1500) {
                 userRequestInfo.lastMessageId = null;
@@ -127,7 +135,6 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
             } else {
                 userRequestInfo.lastMessageId = res.id;
             }
-
 
             userRequestInfo.lastMessage = msgContent
             if (res.text.length > maxTeleMessageLength) {
@@ -138,13 +145,29 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
                 }
                 clearInterval(typingInterval);
             } else {
-                await bot.sendMessage(userId, res.text, {
-                    reply_to_message_id: msg.message_id, reply_markup: { inline_keyboard: [[{ text: "Generate another", callback_data: "Retry" }]] }
-                });
                 await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
+                await api.sendMessage(`Given this message: ${msg.text}, Generate me three concise (2-3 words) prompts I can ask you (ChatGPT) to further the conversation.`, {
+                    parentMessageId: userRequestInfo.lastMessageId
+                }).then(async (res) => {
+                    console.log(res.text)
+                    let additionalItems = res.text.split(/\d\.\s*/).slice(1).map(s => s.replace(/"/g, '').replace(/\n/g, ''));
+                    console.log(additionalItems)
+                    // Loop through your array
+                    additionalItems.forEach((item, index) => {
+                        // Push each item into a separate sub-array in inlineKeyboardOpts
+                        newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: item });
+                    });
+
+                    await bot.sendMessage(userId, chatGPTAns, {
+                        reply_to_message_id: msg.message_id, reply_markup: {
+                            inline_keyboard: newInlineKeyboardOpts
+                        }
+                    });
+                })
                 clearInterval(typingInterval);
             }
             await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
+
             return;
         });
     } catch (err) {

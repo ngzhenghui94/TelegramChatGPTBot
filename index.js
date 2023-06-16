@@ -5,7 +5,7 @@ import moment from "moment-timezone"
 import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
-import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, queryOpenAI, privateChatOnly } from "./src/utilities.js"
+import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, queryOpenAI, privateChatOnly, inlineKeyboardOpts } from "./src/utilities.js"
 import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
 import { queryStableDiffusion } from './src/stableDiffusion.js'
 import Jimp from "jimp"
@@ -47,6 +47,10 @@ bot.on('message', async (msg) => {
     try {
         if (msg.chat.type == "private") {
             await queryOpenAI(api, msg, bot, logger)
+            let userId = msg.from.id;
+            const userRequestInfo = await getUserRequestInfo(userId);
+
+
         }
     } catch (err) {
         console.log(err + JSON.stringify(msg))
@@ -55,34 +59,61 @@ bot.on('message', async (msg) => {
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
-    const action = callbackQuery.data;
-    const msg = callbackQuery.message;
-    await bot.sendChatAction(msg.chat.id, "typing");
-    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
-    let userId = msg.chat.id
-    let userRequestInfo = await getUserRequestInfo(userId);
-    let userName = await getUsersnameFromMsg(msg)
-    let msgContent = "Tell me another - " + msg.reply_to_message.text;
+    try {
+        const action = callbackQuery.data;
+        console.log(action)
+        const msg = callbackQuery.message;
+        await bot.sendChatAction(msg.chat.id, "typing");
+        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+        let userId = msg.chat.id
+        let userRequestInfo = await getUserRequestInfo(userId);
 
-    if (action === 'Retry') {
+        let msgContent = "";
+        if (action === 'Retry') {
+            msgContent = "Tell me another - " + msg.reply_to_message.text;
+        } else if (action == "Surprise") {
+            msgContent = "Surprise me!";
+        } else if (action == "Explain") {
+            msgContent = "Explain and elaborate" + msg.reply_to_message.text;
+        } else {
+            msgContent = action;
+        }
         await api.sendMessage(msgContent, {
             parentMessageId: userRequestInfo.lastMessageId
         }).then(async (res) => {
+            let chatGPTAns = res.text
             if (res.detail.usage.total_tokens >= 1500) {
                 userRequestInfo.lastMessageId = null;
-                await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
             } else {
                 userRequestInfo.lastMessageId = res.id;
             }
             await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
-            await bot.sendMessage(userId, res.text, {
-                reply_to_message_id: msg.message_id, reply_markup: { inline_keyboard: [[{ text: "Give me another", callback_data: "Retry" }]] }
-            });
-            await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\n Re-try, msg obj: ${JSON.stringify(msg)}`);
+            await api.sendMessage(`Given this message: ${msg.text}, Generate me three concise (2-3 words) prompts I can ask you (ChatGPT) to further the conversation.`, {
+                parentMessageId: userRequestInfo.lastMessageId
+            }).then(async (res) => {
+
+                let additionalItems = res.text.split(/\d\.\s*/).slice(1).map(s => s.replace(/"/g, '').replace(/\n/g, ''));
+
+                let newInlineKeyboardOpts = JSON.parse(JSON.stringify(inlineKeyboardOpts));
+                // Loop through your array
+                additionalItems.forEach((item, index) => {
+                    // Push each item into a separate sub-array in inlineKeyboardOpts
+                    newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: item });
+                });
+
+                await bot.sendMessage(userId, chatGPTAns, {
+                    reply_to_message_id: msg.message_id, reply_markup: {
+                        inline_keyboard: newInlineKeyboardOpts
+                    }
+                });
+            })
             clearInterval(typingInterval);
             return;
         });
+    } catch (err) {
+        console.log(err)
     }
+
 });
 
 bot.onText(/^\/image/i, async (msg) => {
