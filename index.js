@@ -5,9 +5,9 @@ import moment from "moment-timezone"
 import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
-import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, queryOpenAI, privateChatOnly, inlineKeyboardOpts } from "./src/utilities.js"
+import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, privateChatOnly } from "./src/redisUtilities.js"
 import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
-import { queryStableDiffusion } from './src/stableDiffusion.js'
+import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts } from './src/query.js'
 import Jimp from "jimp"
 import fs from "fs"
 moment.tz.setDefault("Asia/Singapore");
@@ -30,8 +30,11 @@ const api = new ChatGPTAPI({
     }
 })
 
-// Matches "!bot" command
-bot.onText(/!bot (.+)/, async (msg, parameter) => {
+// Get the bot's Telegram handler
+const botInfo = await bot.getMe();
+const botUsername = botInfo.username;
+const botUsernameRegex = new RegExp('@' + botUsername, 'i');
+bot.onText(botUsernameRegex, async (msg, parameter) => {
     try {
         let groupMsg = parameter[1]
         if (msg.chat.type == "group") {
@@ -40,8 +43,23 @@ bot.onText(/!bot (.+)/, async (msg, parameter) => {
     } catch (err) {
         // Tell the user there was an error
         await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
-        await logger.sendMessage(telegramAdminId, `[!bot] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
-        console.error(`[!bot] Caught Error: ${err}`)
+        await logger.sendMessage(telegramAdminId, `[@bot] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[@bot] Caught Error: ${err}`)
+    }
+})
+
+// Matches "@bot" command
+bot.onText(/@bot (.+)/, async (msg, parameter) => {
+    try {
+        let groupMsg = parameter[1]
+        if (msg.chat.type == "group") {
+            await queryOpenAI(api, msg, bot, logger, groupMsg)
+        }
+    } catch (err) {
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[@bot] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[@bot] Caught Error: ${err}`)
     }
 });
 
@@ -476,6 +494,8 @@ bot.onText(/^\/help$/i, async (msg) => {
         3. /subscribe - Show subscription options for unlimited queries.
         4. /subscription - Check your current subscription status.
         5. /image - Generates an image based on the provided text.
+        6. @${botUsername} [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
+        7. @bot [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
 
     Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
     `;

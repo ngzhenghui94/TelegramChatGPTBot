@@ -8,77 +8,12 @@ dotenv.config()
 
 const redis = new Redis(process.env.REDIS_URL);
 const telegramAdminId = process.env.ADMINID;
+const huggingFaceToken = process.env.HUGGINGFACEKEY;
 
-export const blobToBuffer = async (blob) => {
-    const arrayBuffer = await blob.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-}
-
-export const checkRedis = async () => {
-    try {
-        let keys = await redis.keys('*');
-        let valuePromises = keys.map(async key => {
-            let value = await redis.get(key);
-            console.log(`Key: ${key}, Value: ${value}`);
-            return `Key: ${key}, Value: ${value}\n`;
-        });
-        let values = await Promise.all(valuePromises);
-        let returnMsg = values.join("");
-        return returnMsg
-    } catch (err) {
-        console.error(`[checkRedis] Caught Error: ${err}`)
-    }
-}
-
-export const resetRedis = async () => {
-    try {
-        redis.flushdb((err, result) => {
-            if (err) {
-                console.erroror(err);
-                return;
-            }
-            console.log("Redis database has been reset");
-        });
-    } catch (err) {
-        console.error(`[resetRedis] Caught Error: ${err}`)
-    }
-}
-
-export const checkUserOnRedis = async (telegramId) => {
-    try {
-        let value = await redis.get(`user: ${telegramId}`);
-        if (value) {
-            console.log(`Key: user: ${telegramId}, Value: ${value}`);
-            return `Key: user: ${telegramId}, Value: ${value}\n`;
-        } else {
-            console.log(`Key: user: ${telegramId} does not exist.`);
-            return `Key: user: ${telegramId} does not exist.\n`;
-        }
-    } catch (err) {
-        console.error(`[checkUserOnRedis] Caught Error: ${err}`)
-    }
-}
-
-export const removeFromRedisCache = async (userId) => {
-    try {
-        await redis.del(`user: ${userId}`);
-        return;
-    } catch (err) {
-        console.error(`[removeFromRedisCache] Caught Error: ${err}`)
-    }
-}
-
-export const privateChatOnly = async (msg) => {
-    try {
-        if (msg.chat.type == "private") {
-            return true
-        } else {
-            return false
-        }
-    } catch (err) {
-        console.error(`[privateChatOnly] Caught Error: ${err}`)
-    }
-}
+export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, { text: "Elaborate", callback_data: "Explain" }],
+[],
+[],
+[]]
 
 export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
     let userId = msg.from.id;
@@ -87,7 +22,6 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
     const maxTeleMessageLength = 3096;
     const now = moment().format("DD/MM/YY HH:mm");
     let newInlineKeyboardOpts = JSON.parse(JSON.stringify(inlineKeyboardOpts));
-
 
     try {
         await bot.sendChatAction(msg.chat.id, "typing");
@@ -180,7 +114,17 @@ const chunkMessage = (message, chunkSize) => {
     return chunks;
 };
 
-export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, { text: "Surprise", callback_data: "Surprise" }, { text: "Elaborate", callback_data: "Explain" }],
-[],
-[],
-[]]
+
+export const queryStableDiffusion = async (data) => {
+    try {
+        const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1-base", {
+            headers: { Authorization: `Bearer ${huggingFaceToken}` },
+            method: "POST",
+            body: JSON.stringify(data),
+        })
+        const result = await response.blob();
+        return result;
+    } catch (err) {
+        console.error(`[queryStableDiffusion] Caught Error: ${err}`)
+    }
+}
