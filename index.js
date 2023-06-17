@@ -7,7 +7,7 @@ import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, privateChatOnly } from "./src/redisUtilities.js"
 import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
-import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts } from './src/query.js'
+import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts, queryOpenAIPrompt } from './src/query.js'
 import Jimp from "jimp"
 import fs from "fs"
 moment.tz.setDefault("Asia/Singapore");
@@ -196,21 +196,21 @@ bot.onText(/^\/reset$/i, async (msg) => {
 });
 
 bot.onText(/^\/subscribe$/i, async (msg) => {
+    const userId = msg.chat.id;
     try {
         if (await privateChatOnly(msg) === false) {
             await bot.sendMessage(msg.chat.id, "Sorry, this command is only available in private chat.")
             return;
         }
-        const chatId = msg.chat.id;
-        const hasSubscription = await checkSubscription(chatId)
+        const hasSubscription = await checkSubscription(userId)
         console.log(`Subscribe:  ${JSON.stringify(msg)}`)
         if (hasSubscription.isSubscriber != true) {
             // Send a message with a payment button
             await bot.sendInvoice(
-                chatId,
+                userId,
                 'Telegram ChatGPT Subscription (30 Days)',
                 '30 days unlimited telegram ChatGPT query',
-                chatId,
+                userId,
                 teleSripeProductKey,
                 'USD',
                 [
@@ -222,10 +222,10 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
             ).then(async () => {
                 // Send a message with a payment button
                 await bot.sendInvoice(
-                    chatId,
+                    userId,
                     'Telegram ChatGPT Subscription (1 Year)',
                     '1 year unlimited telegram ChatGPT query',
-                    chatId,
+                    userId,
                     teleSripeProductKey,
                     'USD',
                     [
@@ -238,7 +238,7 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
             })
             return;
         } else {
-            bot.sendMessage(chatId, "You have an active subscription.");
+            bot.sendMessage(userId, "You have an active subscription.");
             return;
         }
     } catch (err) {
@@ -250,14 +250,14 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
 })
 
 
-bot.on('pre_checkout_query', async (query) => {
+bot.on('pre_checkout_query', async (msg) => {
+    const userId = msg.from.id;
     try {
-        const chatId = query.from.id;
         // Answer the pre-checkout query to confirm payment
-        bot.answerPreCheckoutQuery(query.id, true);
+        bot.answerPreCheckoutQuery(msg.id, true);
         console.log(`Pre_Checkout_Query:  ${JSON.stringify(msg)}`)
         // Send a message to notify the user that payment is being processed
-        bot.sendMessage(chatId, 'Payment processing...');
+        bot.sendMessage(userId, 'Payment processing...');
         return;
     } catch (err) {
         // Tell the user there was an error
@@ -269,8 +269,8 @@ bot.on('pre_checkout_query', async (query) => {
 
 // Handle successful payment
 bot.on('successful_payment', async (msg) => {
+    const userId = msg.chat.id;
     try {
-        const userId = msg.chat.id;
         await createSubscriptionObject(userId, msg, msg.successful_payment.total_amount)
         console.log(`Successful_Payment:  ${JSON.stringify(msg)}`)
         bot.sendMessage(userId, 'Payment successful');
@@ -285,6 +285,7 @@ bot.on('successful_payment', async (msg) => {
 
 // Reset redis cache on reset command
 bot.onText(/^\/resetredis$/i, async (msg) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             await resetRedis()
@@ -302,6 +303,7 @@ bot.onText(/^\/resetredis$/i, async (msg) => {
 })
 
 bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             const returnMsg = await checkRedis()
@@ -320,6 +322,7 @@ bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
 });
 
 bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             let telegramId = parameter[1]
@@ -339,12 +342,12 @@ bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
 });
 
 bot.onText(/^\/subscription$/i, async (msg) => {
+    const userId = msg.chat.id;
     try {
         if (await privateChatOnly(msg) === false) {
             await bot.sendMessage(msg.chat.id, "Sorry, this command is only available in private chat.")
             return;
         }
-        const userId = msg.chat.id
         const subscriptionInfo = await checkSubscription(userId)
         await bot.sendMessage(msg.chat.id, `Telegram ID: ${userId}\n\n${subscriptionInfo.msg}`)
         return;
@@ -357,6 +360,7 @@ bot.onText(/^\/subscription$/i, async (msg) => {
 })
 
 bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         const telegramId = parameter[1]
         const amountToAdd = parameter[2]
@@ -471,17 +475,18 @@ bot.onText(/^\/getAllSubscription$/i, async (msg) => {
 bot.onText(/^\/start$/i, async (msg) => {
     const welcomeText = `
     Hello! I'm your personal AI Chat bot. 🤖
-    I'm here to help you with a variety of tasks. Here's what I can do:
-    1. Answer your questions (chat normally with me! or use !bot <description> in group chat)🧐
-    2. Generate images from text (use /image <description>)🎨
-    3. Check your subscription status (/subscription)💳
+    
+I'm here to help you with a variety of tasks. Here's what I can do:
 
-    Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
+1. Answer your questions (chat normally with me! or use @bot <description> or @myusername [message]in group chat)🧐
+2. Generate images from text (use /image <description>)🎨
+3. Check your subscription status (/subscription)💳
 
-    How can I assist you today?
-    `;
+Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
 
-    await bot.sendMessage(msg.chat.id, welcomeText);
+How can I assist you today?`;
+
+    await queryOpenAIPrompt(api, msg, bot, welcomeText)
     return;
 });
 
@@ -489,28 +494,27 @@ bot.onText(/^\/help$/i, async (msg) => {
     const commonCommands = `
     Here's a list of commands that you can use:
 
-        1. /help - Shows the list of commands.
-        2. /reset - Reset the current conversation with the bot.
-        3. /subscribe - Show subscription options for unlimited queries.
-        4. /subscription - Check your current subscription status.
-        5. /image - Generates an image based on the provided text.
-        6. @${botUsername} [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
-        7. @bot [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
+1. /help - Shows the list of commands.
+2. /reset - Soft reset the current conversation with the bot.
+3. /subscribe - Show subscription options for unlimited queries.
+4. /subscription - Check your current subscription status.
+5. /image - Generates an image based on the provided text.
+6. @${botUsername} [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
+7. @bot [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
 
-    Please, remember to not start your query with a "/" if you want to talk to the bot. Commands starting with "/" are interpreted as commands.
+Please, remember to not start your query with a "/" if you want to talk to the bot. Messages starting with "/" are interpreted as commands.
     `;
 
     const adminCommands = `
-    Additional Administrator Commands:
+Additional Administrator Commands:
 
-    1. /resetredis - Administrator command to reset Redis cache.
-    2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
-    3. /addSubscriber <telegramId> <amountToAdd> - Administrator command to manually add a subscriber.
-    4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
-    5. /disableSubscriber <telegramId>
-    6. /enableSubscriber <telegramId>
-    7. /getAllSubscription
-    `;
+1. /resetredis - Administrator command to reset Redis cache.
+2. /seeredis or /checkredis - Administrator command to see Redis cache contents.
+3. /addSubscriber <telegramId> <amountToAdd> - Administrator command to manually add a subscriber.
+4. /removeSubscriber <telegramId> - Administrator command to manually remove a subscriber.
+5. /disableSubscriber <telegramId>
+6. /enableSubscriber <telegramId>
+7. /getAllSubscription`;
 
     const helpText = msg.chat.id == telegramAdminId ? commonCommands + adminCommands : commonCommands;
 

@@ -16,22 +16,25 @@ export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, {
 []]
 
 export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
-    let userId = msg.from.id;
+    console.log("QueryOpenAI: " + JSON.stringify(msg))
+    const userId = msg.from.id;
     const userName = await getUsersnameFromMsg(msg);
     const userRequestInfo = await getUserRequestInfo(userId);
     const maxTeleMessageLength = 3096;
     const now = moment().format("DD/MM/YY HH:mm");
-    let newInlineKeyboardOpts = JSON.parse(JSON.stringify(inlineKeyboardOpts));
+    await bot.sendChatAction(msg.chat.id, "typing");
+    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
 
     try {
-        await bot.sendChatAction(msg.chat.id, "typing");
-        const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
         let msgContent;
+        // Check if Private Msg or Group Msg
         if (msg.chat.type == "private") {
+            // For Telegram Msg that was forwarded (with a pic + text)
             if (msg.caption) {
                 msgContent = msg.caption;
             } else if (msg.text) {
                 if (msg.text.startsWith('/')) {
+                    clearInterval(typingInterval);
                     return;
                 } else {
                     msgContent = msg.text;
@@ -40,65 +43,91 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
         } else if (msg.chat.type == "group") {
             msgContent = groupMsg;
             userId = msg.chat.id;
+        } 
+        
+        // bot.on('message') kept responding to /subscribe payment success message
+        if (msg.succesful_payment) {
+            clearInterval(typingInterval);
+            return
         }
-
 
         // Check if the user is rate-limited
         if (await rateLimit(msg)) {
             await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 10 questions please wait 30 minute. Please wait and try again later or /subscribe for unlimited query");
-            await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} has reached rate limit. ${JSON.stringify(msg)}`);
             clearInterval(typingInterval);
             return;
         }
 
+        // Query OpenAI with User's Message.
         await api.sendMessage(`${msgContent}`, {
             parentMessageId: userRequestInfo.lastMessageId
         }).then(async (res) => {
             let chatGPTAns = res.text;
 
+            // Check if the user has exceeded the token limit (this is done to keep the token usage low without affecting users' experience)
             if (res.detail.usage.total_tokens >= 1500) {
                 userRequestInfo.lastMessageId = null;
-                await logger.sendMessage(telegramAdminId, `At: ${now}, ${userName} exceeded token > 1500. resetting their convo. ${JSON.stringify(msg)}`);
             } else {
                 userRequestInfo.lastMessageId = res.id;
             }
 
-            userRequestInfo.lastMessage = msgContent
+            // If the res text from OpenAI is too Long (exceeding Telegram's 4096 char limit), split it into chunks and send it to the user
             if (res.text.length > maxTeleMessageLength) {
+                console.log("Message too long... Fixing...")
                 const chunks = chunkMessage(res.text, maxTeleMessageLength);
                 for (let i = 0; i < chunks.length; i++) {
                     await bot.sendMessage(userId, chunks[i]);
-                    await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${chunks[i]}\n\nmsg obj: ${JSON.stringify(msg)}`);
                 }
-                clearInterval(typingInterval);
             } else {
-                await logger.sendMessage(telegramAdminId, `${userName}: ${msgContent}\n\nChatGPT: ${res.text}\n\nmsg obj: ${JSON.stringify(msg)}`);
-                await api.sendMessage(`Given this message: ${msg.text}, Generate me three concise (2-3 words) prompts I can ask you (ChatGPT) to further the conversation.`, {
-                    parentMessageId: userRequestInfo.lastMessageId
-                }).then(async (res) => {
-                    let additionalItems = res.text.split(/\d\.\s*/).slice(1).map(s => s.replace(/"/g, '').replace(/\n/g, ''));
-
-                    // Loop through your array
-                    additionalItems.forEach((item, index) => {
-                        // Push each item into a separate sub-array in inlineKeyboardOpts
-                        newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: index + 1 });
-                    });
-
-                    await bot.sendMessage(userId, chatGPTAns, {
-                        reply_to_message_id: msg.message_id, reply_markup: {
-                            inline_keyboard: newInlineKeyboardOpts
-                        }
-                    });
-                    clearInterval(typingInterval);
-                })
-                clearInterval(typingInterval);
+                // Else, query OpenAI for prompts
+                await queryOpenAIPrompt(api, msg, bot, chatGPTAns)
             }
+            
+            // Update redis with .lastMessageId, it is used for OpenAI to keep track of convo
             await redis.set(`user: ${userId}`, JSON.stringify(userRequestInfo));
             clearInterval(typingInterval);
             return;
         });
     } catch (err) {
         console.error(`[queryOpenAI] Caught Error: ${err}`)
+        clearInterval(typingInterval);
+        return;
+    }
+}
+
+// Query OpenAI for prompts in order to further the conversation
+export const queryOpenAIPrompt = async (api, msg, bot, chatGPTAns) => {
+    const userId = msg.from.id;
+    const userRequestInfo = await getUserRequestInfo(userId);
+    await bot.sendChatAction(msg.chat.id, "typing");
+    const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
+    let newInlineKeyboardOpts = JSON.parse(JSON.stringify(inlineKeyboardOpts));
+
+    try {
+        // Query OpenAI for prompts.
+        await api.sendMessage(`Given this message: ${msg.text}, Generate me three concise (2-3 words) prompts I can ask you (ChatGPT) to further the conversation.`, {
+            parentMessageId: userRequestInfo.lastMessageId
+        }).then(async (res) => {
+            // Format the prompts from OpenAI into an array
+            let additionalItems = res.text.split(/\d\.\s*/).slice(1).map(s => s.replace(/"/g, '').replace(/\n/g, ''));
+
+            // Loop through your array
+            additionalItems.forEach((item, index) => {
+                // Push each item into a separate sub-array in newInlineKeyboardOpts
+                newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: index + 1 });
+            });
+
+            // Send the prompts to the user with the original answer
+            await bot.sendMessage(userId, chatGPTAns, {
+                reply_to_message_id: msg.message_id, reply_markup: {
+                    inline_keyboard: newInlineKeyboardOpts
+                }
+            });
+            clearInterval(typingInterval);
+        })
+        clearInterval(typingInterval);
+    } catch (err) {
+        console.error(`[queryOpenAIPrompt] Caught Error: ${err}`)
         return;
     }
 }
@@ -126,5 +155,6 @@ export const queryStableDiffusion = async (data) => {
         return result;
     } catch (err) {
         console.error(`[queryStableDiffusion] Caught Error: ${err}`)
+        return;
     }
 }
