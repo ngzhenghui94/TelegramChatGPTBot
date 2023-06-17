@@ -23,7 +23,9 @@ export const getUserRequestInfo = async (userId) => {
 export const getUsersnameFromMsg = async (msg) => {
     try {
         let username = "";
-        if (msg.from.first_name) {
+        if (!msg.from.first_name && !msg.from.username) {
+            username = "Anonymous User"
+        } else if (msg.from.first_name) {
             username = msg.from.first_name
         } else if (msg.from.username) {
             username = msg.from.username
@@ -32,6 +34,6 @@ export const getUsersnameFromMsg = async (msg) => {
         }
         return username;
     } catch (err) {
-        console.error(`[getUsersnameFromMsg] Caught Error: ${err}`)
+        console.error(`[getUsersnameFromMsg] Caught Error: ${err}\n\n ${msg}`)
     }
 }

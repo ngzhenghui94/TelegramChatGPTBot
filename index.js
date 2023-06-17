@@ -38,22 +38,25 @@ bot.onText(/!bot (.+)/, async (msg, parameter) => {
             await queryOpenAI(api, msg, bot, logger, groupMsg)
         }
     } catch (err) {
-        console.log(err + JSON.stringify(msg))
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[!bot] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[!bot] Caught Error: ${err}`)
     }
 });
 
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
+    await logger.sendMessage(telegramAdminId, `${await getUsersnameFromMsg(msg)}: msg obj: ${JSON.stringify(msg)}`);
     try {
         if (msg.chat.type == "private") {
             await queryOpenAI(api, msg, bot, logger)
-            let userId = msg.from.id;
-            const userRequestInfo = await getUserRequestInfo(userId);
-
-
         }
     } catch (err) {
-        console.log(err + JSON.stringify(msg))
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[message] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[message] Caught Error: ${err}`)
     }
 });
 
@@ -61,8 +64,8 @@ bot.on('message', async (msg) => {
 bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
     try {
         const action = callbackQuery.data;
-        console.log(action)
         const msg = callbackQuery.message;
+
         await bot.sendChatAction(msg.chat.id, "typing");
         const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
         let userId = msg.chat.id
@@ -76,7 +79,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
         } else if (action == "Explain") {
             msgContent = "Explain and elaborate" + msg.reply_to_message.text;
         } else {
-            msgContent = action;
+            msgContent = msg.reply_markup.inline_keyboard[action][0].text;
         }
         await api.sendMessage(msgContent, {
             parentMessageId: userRequestInfo.lastMessageId
@@ -98,30 +101,36 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
                 // Loop through your array
                 additionalItems.forEach((item, index) => {
                     // Push each item into a separate sub-array in inlineKeyboardOpts
-                    newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: item });
+                    newInlineKeyboardOpts[index + 1].push({ text: item, callback_data: index + 1 });
                 });
-
+                // console.log(additionalItems)
                 await bot.sendMessage(userId, chatGPTAns, {
                     reply_to_message_id: msg.message_id, reply_markup: {
                         inline_keyboard: newInlineKeyboardOpts
                     }
                 });
+                clearInterval(typingInterval);
             })
             clearInterval(typingInterval);
             return;
         });
     } catch (err) {
-        console.log(err)
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[callback_query] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[callback_query] Caught Error: ${err}`)
     }
-
 });
 
 bot.onText(/^\/image/i, async (msg) => {
+    let now = moment().format("DD/MM/YY HH:mm");
+    let userId = msg.from.id;
+    let userName = await getUsersnameFromMsg(msg);
+
     try {
         // Check if the user is rate-limited
         if (await rateLimit(msg)) {
             await bot.sendMessage(msg.chat.id, "You have reached the maximum requests of 10 questions please wait 30 minute. Please wait and try again later or /subscribe.");
-            await logger.sendMessage(telegramAdminId, "@ " + now + " User has reached rate limit. " + JSON.stringify(msg.from))
             return;
         }
         let data = (msg.text).replace(/\/image /g, "")
@@ -136,14 +145,10 @@ bot.onText(/^\/image/i, async (msg) => {
         await fs.promises.unlink(imagePath);
         return;
     } catch (err) {
-        let userId = msg.from.id;
-        let userName = await getUsersnameFromMsg(msg);
-        let now = moment().format("DD/MM/YY HH:mm");
         // Tell the user there was an error
-        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${e}`, { reply_to_message_id: msg.message_id });
-        await logger.sendMessage(telegramAdminId, `At: ${now}, error logged by - ${userName}. ${e} ----- ${JSON.stringify(msg)}`);
-        console.error(`[/image] Caught Error: ${e}`)
-        return;
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/image] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/image] Caught Error: ${err}`)
     }
 })
 
@@ -165,10 +170,10 @@ bot.onText(/^\/reset$/i, async (msg) => {
         })
         return;
     } catch (err) {
-        await bot.sendMessage(msg.chat.id, "Sorry, there was an error. You may not have a convo to rest." + e)
-        await logger.sendMessage(telegramAdminId, "Convo reset initiated by " + JSON.stringify(msg.from) + " has failed.")
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/reset] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
         console.error(`[/reset] Caught Error: ${err}`)
-        return;
     }
 });
 
@@ -219,14 +224,15 @@ bot.onText(/^\/subscribe$/i, async (msg) => {
             return;
         }
     } catch (err) {
-        bot.sendMessage(msg.chat.id, "Sorry, there was an error. Please try again later.")
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/subscribe] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
         console.error(`[/subscribe] Caught Error: ${err}`)
-        return;
     }
 })
 
 
-bot.on('pre_checkout_query', (query) => {
+bot.on('pre_checkout_query', async (query) => {
     try {
         const chatId = query.from.id;
         // Answer the pre-checkout query to confirm payment
@@ -236,8 +242,10 @@ bot.on('pre_checkout_query', (query) => {
         bot.sendMessage(chatId, 'Payment processing...');
         return;
     } catch (err) {
-        console.error(`[Pre_Checkout_Query] Caught Error: ${err}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/pre_checkout_query] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/pre_checkout_query] Caught Error: ${err}`)
     }
 });
 
@@ -250,8 +258,10 @@ bot.on('successful_payment', async (msg) => {
         bot.sendMessage(userId, 'Payment successful');
         return;
     } catch (err) {
-        console.error(`[Successful_Payment] Caught Error: ${err}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/successful_payment] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/successful_payment] Caught Error: ${err}`)
     }
 })
 
@@ -266,8 +276,10 @@ bot.onText(/^\/resetredis$/i, async (msg) => {
         }
         return;
     } catch (err) {
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/resetredis] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
         console.error(`[/resetredis] Caught Error: ${err}`)
-        return;
     }
 })
 
@@ -282,8 +294,10 @@ bot.onText(/^\/seeredis|\/checkredis$/i, async (msg) => {
             return;
         }
     } catch (err) {
-        console.error(`[/seeredis | /checkredis] Caught Error: ${err}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/seeredis] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/seeredis] Caught Error: ${err}`)
     }
 });
 
@@ -299,8 +313,10 @@ bot.onText(/^\/redis (.+)/i, async (msg, parameter) => {
             return;
         }
     } catch (err) {
-        console.error(`[/redis] Caught Error: ${err}`);
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/redis] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/redis] Caught Error: ${err}`)
     }
 });
 
@@ -315,7 +331,10 @@ bot.onText(/^\/subscription$/i, async (msg) => {
         await bot.sendMessage(msg.chat.id, `Telegram ID: ${userId}\n\n${subscriptionInfo.msg}`)
         return;
     } catch (err) {
-        console.error(`[/subscription] Caught Error: ${e}`)
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/subscription] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/subscription] Caught Error: ${err}`)
     }
 })
 
@@ -331,8 +350,10 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
         }
         return;
     } catch (err) {
-        console.error(`[/addSubscriber] Caught Error: ${e}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/addSubscriber] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/addSubscriber] Caught Error: ${err}`)
     }
 })
 
@@ -347,8 +368,10 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
         }
         return;
     } catch (err) {
-        console.error(`[/removeSubscriber] Caught Error: ${e}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/removeSubscriber] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/removeSubscriber] Caught Error: ${err}`)
     }
 })
 
@@ -368,8 +391,10 @@ bot.on(/^\/disableSubscription (.+)/i, async (msg, parameter) => {
             return;
         }
     } catch (err) {
-        console.error(`[/disableSubscription] Caught Error: ${e}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/disableSubscription] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/disableSubscription] Caught Error: ${err}`)
     }
 })
 
@@ -391,8 +416,10 @@ bot.on(/^\/enableSubscription (.+)/i, async (msg, parameter) => {
             return;
         }
     } catch (err) {
-        console.error(`[/enableSubscription] Caught Error: ${e}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/enableSubscription] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/enableSubscription] Caught Error: ${err}`)
     }
 })
 
@@ -415,8 +442,10 @@ bot.onText(/^\/getAllSubscription$/i, async (msg) => {
             return;
         }
     } catch (err) {
-        console.error(`[/getAllSubscription] Caught Error: ${e}`)
-        return;
+        // Tell the user there was an error
+        await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
+        await logger.sendMessage(telegramAdminId, `[/getAllSubscription] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
+        console.error(`[/getAllSubscription] Caught Error: ${err}`)
     }
 })
 
