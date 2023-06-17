@@ -15,13 +15,12 @@ export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, {
 [],
 []]
 
+// OpenAI Query
 export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
     console.log("QueryOpenAI: " + JSON.stringify(msg))
     const userId = msg.from.id;
-    const userName = await getUsersnameFromMsg(msg);
     const userRequestInfo = await getUserRequestInfo(userId);
     const maxTeleMessageLength = 3096;
-    const now = moment().format("DD/MM/YY HH:mm");
     await bot.sendChatAction(msg.chat.id, "typing");
     const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
 
