@@ -5,6 +5,7 @@ A Telegram bot that responds to queries with response from OpenAI/ChatGPT
 * Responds to queries with response via OpenAI/ChatGPT.
 * Rate-limiting tracked via in-mem Redis
 * Paid Subscription Model
+* Intelligent Prompts
 
 # Installation
 1. Make sure you have NodeJS installed (https://nodejs.org/en).
