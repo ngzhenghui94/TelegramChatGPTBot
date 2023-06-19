@@ -7,6 +7,12 @@ A Telegram bot that responds to queries with response from OpenAI/ChatGPT
 * Paid Subscription Model
 * Intelligent Prompts
 
+# Demo
+https://web.telegram.org/k/#@Tg_OpenAi_GPT_Bot
+<p>
+    <img src="./demo.gif"/>
+</p>
+
 # Installation
 1. Make sure you have NodeJS installed (https://nodejs.org/en).
 2. Install the NodeJs Packages using this command:
