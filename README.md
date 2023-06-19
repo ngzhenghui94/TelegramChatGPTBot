@@ -3,9 +3,15 @@ A Telegram bot that responds to queries with response from OpenAI/ChatGPT
 
 # Features
 * Responds to queries with response via OpenAI/ChatGPT.
-* Rate-limiting tracked via in-mem Redis
-* Paid Subscription Model
+* Rate-limiting tracked via in-memory Redis
+* Paid Subscription Model tracked via MongoDB
 * Intelligent Prompts
+
+# Demo
+https://web.telegram.org/k/#@Tg_OpenAi_GPT_Bot
+<p>
+    <img src="./demo.gif"/>
+</p>
 
 # Installation
 1. Make sure you have NodeJS installed (https://nodejs.org/en).
@@ -17,7 +23,11 @@ npm install
 ```
 sudo apt install redis-server 
 ```
-4. Create a .env file in the following format.
+4. Create an account and database on MongoDB
+```
+mongodb.com
+```
+6. Rename the .env.example file to .env
 ```
 OPENAPIKEY=""
 TELEGRAMBOTAPIKEY=""
@@ -27,6 +37,11 @@ TELESTRIPEKEY="" <-Obtain from BotFather -> Select your Telegram Bot -> Under Pa
 HUGGINGFACEKEY="" <-Obtain from HuggingFace to use /image command to generate images
 WHITELIST=1111111,2222222,33333333 <-Telegram User ID of whitelisted users (no rate limit)
 BLACKLIST=4444444,5555555 <-Telegram User ID of blacklisted users (will not be able to use the bot)
+MONGODBURI = "mongodb+srv://<username>:<password>@<url>/?retryWrites=true&w=majority" # replace with your MongoDB URI
+MONGODBNAME = "" # MongoDB Database Name
+MONGODBCOLLECTION = "" MongoDB Collection Name
+RATELIMITQNS = 10 # number of req before ratelimit kicks in.
+RAETLIMITTIMER = 20 # in minutes
 ````
 These keys are not included in the code as it is sensitive and different for everyone.
 To obtain the first key (OpenAI API Key), login to your ChatGPT account via this URL (https://platform.openai.com/account/api-keys).
