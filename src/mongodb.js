@@ -12,6 +12,7 @@ export const mongoClient = new MongoClient(mongoDBUri, {
     deprecationErrors: true,
   }
 });
+
 // Start-up test connectivity to MongoDb
 async function run() {
   try {

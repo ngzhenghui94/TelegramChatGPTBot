@@ -11,7 +11,7 @@ export const getUserRequestInfo = async (userId) => {
         if (requestInfo) {
             requestInfo = JSON.parse(requestInfo);
         } else {
-            requestInfo = { count: 0 };
+            requestInfo = { messageCount: 0, rateLimit: 0 };
         }
         return requestInfo;
     } catch (err) {

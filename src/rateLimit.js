@@ -32,7 +32,7 @@ function isUserIdInBlacklist(userId) {
 }
 
 // UserInfo object (requestInfo)
-// requestInfo.count
+// requestInfo.rateLimit
 // requestInfo.blockTime
 // requestInfo.lastMessageId
 // requestInfo.isWhitelisted
@@ -46,11 +46,12 @@ export const rateLimit = async (msg) => {
         const timeWindow = limitTimer * 60 * 1000 // limitTimer is minutes -> milliseconds
         const requestInfo = await getUserRequestInfo(userId);
         const username = await getUsersnameFromMsg(msg)
+        requestInfo.messageCount += 1;
 
         // Whitelist check
         if (isUserIdInWhitelist(userId)) {
             await logger.sendMessage(telegramAdminId, `Whitelisted: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-            requestInfo.count = 0;
+            requestInfo.rateLimit = 0;
             requestInfo.isWhitelisted = true;
             await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             return false;
@@ -58,7 +59,7 @@ export const rateLimit = async (msg) => {
         // Blacklist Check
         if (isUserIdInBlacklist(userId)) {
             await logger.sendMessage(telegramAdminId, `Blacklisted: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
-            requestInfo.count = 99;
+            requestInfo.rateLimit = 99;
             requestInfo.isBlacklisted = true;
             await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             return true;
@@ -75,12 +76,13 @@ export const rateLimit = async (msg) => {
             } else {
                 await logger.sendMessage(telegramAdminId, `Subscriber expired: ${username} - ${userId}:${JSON.stringify(requestInfo)}`);
             }
+            await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
         }
 
         // Normal rate limiting check
         await logger.sendMessage(telegramAdminId, `${userId}:${JSON.stringify(requestInfo)}`);
-        if (requestInfo.count < rateLimitRequests) {
-            requestInfo.count += 1;
+        if (requestInfo.rateLimit < rateLimitRequests) {
+            requestInfo.rateLimit += 1;
             await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             return false;
         }
@@ -95,7 +97,7 @@ export const rateLimit = async (msg) => {
             }
             // Time window elapsed, reset count and clear block state
             requestInfo.blockTime = null;
-            requestInfo.count = 0;
+            requestInfo.rateLimit = 0;
             await redis.set(`user: ${userId}`, JSON.stringify(requestInfo));
             return false;
         }

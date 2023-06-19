@@ -65,14 +65,3 @@ export const removeFromRedisCache = async (userId) => {
     }
 }
 
-export const privateChatOnly = async (msg) => {
-    try {
-        if (msg.chat.type == "private") {
-            return true
-        } else {
-            return false
-        }
-    } catch (err) {
-        console.error(`[privateChatOnly] Caught Error: ${err}`)
-    }
-}

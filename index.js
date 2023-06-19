@@ -5,9 +5,10 @@ import moment from "moment-timezone"
 import Redis from "ioredis"
 import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
-import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis, privateChatOnly } from "./src/redisUtilities.js"
+import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/redisUtilities.js"
 import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
 import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts, queryOpenAIPrompt } from './src/query.js'
+import { privateChatOnly } from "./src/utilities.js"
 import Jimp from "jimp"
 import fs from "fs"
 moment.tz.setDefault("Asia/Singapore");
@@ -34,6 +35,8 @@ const api = new ChatGPTAPI({
 const botInfo = await bot.getMe();
 const botUsername = botInfo.username;
 const botUsernameRegex = new RegExp('@' + botUsername, 'i');
+
+// Bot will respond to itself in Telegram Group Chat when users query it via @<BotUsername> [Message]
 bot.onText(botUsernameRegex, async (msg, parameter) => {
     try {
         let groupMsg = parameter[1]
@@ -44,7 +47,7 @@ bot.onText(botUsernameRegex, async (msg, parameter) => {
         // Tell the user there was an error
         await bot.sendMessage(userId, `Sorry there was an error. Please try again later or use the /reset command. ${err}`, { reply_to_message_id: msg.message_id });
         await logger.sendMessage(telegramAdminId, `[@bot] Error logged by - ${msg.chat.id}. ${err} ----- ${JSON.stringify(msg)}`);
-        console.error(`[@bot] Caught Error: ${err}`)
+        console.error(`[@${botUsername}] Caught Error: ${err}`)
     }
 })
 
@@ -141,9 +144,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
 });
 
 bot.onText(/^\/image/i, async (msg) => {
-    let now = moment().format("DD/MM/YY HH:mm");
     let userId = msg.from.id;
-    let userName = await getUsersnameFromMsg(msg);
 
     try {
         // Check if the user is rate-limited

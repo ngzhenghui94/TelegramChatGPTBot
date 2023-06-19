@@ -17,7 +17,7 @@ export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, {
 
 // OpenAI Query
 export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
-    console.log("QueryOpenAI: " + JSON.stringify(msg))
+    // console.log("QueryOpenAI: " + JSON.stringify(msg))
     const userId = msg.from.id;
     const userRequestInfo = await getUserRequestInfo(userId);
     const maxTeleMessageLength = 3096;
