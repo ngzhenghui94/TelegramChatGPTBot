@@ -144,7 +144,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
 });
 
 bot.onText(/^\/image/i, async (msg) => {
-    let userId = msg.from.id;
+    const userId = msg.from.id;
 
     try {
         // Check if the user is rate-limited
@@ -173,6 +173,8 @@ bot.onText(/^\/image/i, async (msg) => {
 
 
 bot.onText(/^\/reset$/i, async (msg) => {
+    const userId = msg.from.id;
+
     try {
         if (await privateChatOnly(msg) === false) {
             await bot.sendMessage(msg.chat.id, "Sorry, this command is only available in private chat.")
