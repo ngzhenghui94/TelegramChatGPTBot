@@ -38,6 +38,7 @@ const botUsernameRegex = new RegExp('@' + botUsername, 'i');
 
 // Bot will respond to itself in Telegram Group Chat when users query it via @<BotUsername> [Message]
 bot.onText(botUsernameRegex, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         let groupMsg = parameter[1]
         if (msg.chat.type == "group") {
@@ -53,6 +54,7 @@ bot.onText(botUsernameRegex, async (msg, parameter) => {
 
 // Matches "@bot" command
 bot.onText(/@bot (.+)/, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         let groupMsg = parameter[1]
         if (msg.chat.type == "group") {
@@ -68,7 +70,7 @@ bot.onText(/@bot (.+)/, async (msg, parameter) => {
 
 // Listen for any kind of message. 
 bot.on('message', async (msg) => {
-    await logger.sendMessage(telegramAdminId, `${await getUsersnameFromMsg(msg)}: msg obj: ${JSON.stringify(msg)}`);
+    const userId = msg.chat.id;
     try {
         if (msg.chat.type == "private") {
             await queryOpenAI(api, msg, bot, logger)
@@ -83,13 +85,13 @@ bot.on('message', async (msg) => {
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
+    const userId = msg.chat.id;
     try {
         const action = callbackQuery.data;
         const msg = callbackQuery.message;
 
         await bot.sendChatAction(msg.chat.id, "typing");
         const typingInterval = setInterval(async () => await bot.sendChatAction(msg.chat.id, 'typing'), 5000);
-        let userId = msg.chat.id
         let userRequestInfo = await getUserRequestInfo(userId);
 
         let msgContent = "";
@@ -145,7 +147,6 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
 
 bot.onText(/^\/image/i, async (msg) => {
     const userId = msg.from.id;
-
     try {
         // Check if the user is rate-limited
         if (await rateLimit(msg)) {
@@ -176,7 +177,6 @@ bot.onText(/^\/image/i, async (msg) => {
 
 bot.onText(/^\/reset$/i, async (msg) => {
     const userId = msg.from.id;
-
     try {
         if (await privateChatOnly(msg) === false) {
             await bot.sendMessage(msg.chat.id, "Sorry, this command is only available in private chat.")
@@ -385,6 +385,7 @@ bot.onText(/^\/addSubscriber (.+) (.+)/i, async (msg, parameter) => {
 })
 
 bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         const telegramId = parameter[1]
         if (msg.chat.id == telegramAdminId) {
@@ -403,6 +404,7 @@ bot.onText(/^\/removeSubscriber (.+)/i, async (msg, parameter) => {
 })
 
 bot.on(/^\/disableSubscription (.+)/i, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             const telegramId = parameter[1]
@@ -426,6 +428,7 @@ bot.on(/^\/disableSubscription (.+)/i, async (msg, parameter) => {
 })
 
 bot.on(/^\/enableSubscription (.+)/i, async (msg, parameter) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             const telegramId = parameter[1]
@@ -451,6 +454,7 @@ bot.on(/^\/enableSubscription (.+)/i, async (msg, parameter) => {
 })
 
 bot.onText(/^\/getAllSubscription$/i, async (msg) => {
+    const userId = msg.chat.id;
     try {
         if (msg.chat.id == telegramAdminId) {
             const results = await getAllSubscription()
