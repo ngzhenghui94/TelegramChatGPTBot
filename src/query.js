@@ -151,6 +151,7 @@ export const queryStableDiffusion = async (data) => {
             body: JSON.stringify(data),
         })
         const result = await response.blob();
+        console.log(result)
         return result;
     } catch (err) {
         console.error(`[queryStableDiffusion] Caught Error: ${err}`)

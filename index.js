@@ -158,6 +158,8 @@ bot.onText(/^\/image/i, async (msg) => {
         const image = await Jimp.read(imageBuffer);
         const randomId = Math.floor(Math.random() * 1000000000);
         const imagePath = `./image-${randomId}.jpg`;
+        const imageJpg = await image.writeAsync(imagePath);
+        console.log(imagePath)
 
         await bot.sendPhoto(msg.chat.id, imagePath);
         // Remember to delete the image file after sending it.
@@ -482,7 +484,7 @@ bot.onText(/^\/start$/i, async (msg) => {
 I'm here to help you with a variety of tasks. Here's what I can do:
 
 1. Answer your questions (chat normally with me! or use @bot <description> or @myusername [message]in group chat)🧐
-2. Generate images from text (use /image <description>)🎨
+2. Generate images from text (use /image <description> - this is mostly for fun/laughs, it is not midjourney tier image generation)🎨 
 3. Check your subscription status (/subscription)💳
 
 Simply chat with me normally! Alternatively, to see a list of commands, you can use /help.
@@ -501,7 +503,7 @@ bot.onText(/^\/help$/i, async (msg) => {
 2. /reset - Soft reset the current conversation with the bot.
 3. /subscribe - Show subscription options for unlimited queries.
 4. /subscription - Check your current subscription status.
-5. /image - Generates an image based on the provided text.
+5. /image - Generates an image based on the provided text - this is mostly for fun/laughs, it is not midjourney tier image generation
 6. @${botUsername} [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
 7. @bot [message] - Used in group chat to talk to the bot. For example, @bot How does the internet work?
 
