@@ -86,7 +86,7 @@ bot.on('message', async (msg) => {
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery) {
-    const userId = msg.chat.id;
+    const userId = callbackQuery.message.chat.id;
     try {
         const action = callbackQuery.data;
         const msg = callbackQuery.message;
