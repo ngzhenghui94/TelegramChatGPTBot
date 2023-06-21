@@ -3,6 +3,7 @@ import { rateLimit } from './rateLimit.js';
 import { getUserRequestInfo, getUsersnameFromMsg } from "./userInfo.js"
 import dotenv from "dotenv"
 import moment from "moment-timezone"
+import axios from "axios"
 moment.tz.setDefault("Asia/Singapore");
 dotenv.config()
 
@@ -18,7 +19,7 @@ export const inlineKeyboardOpts = [[{ text: "Retry", callback_data: "Retry" }, {
 // OpenAI Query
 export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
     // console.log("QueryOpenAI: " + JSON.stringify(msg))
-    const userId = msg.from.id;
+    let userId = msg.from.id;
     const userRequestInfo = await getUserRequestInfo(userId);
     const maxTeleMessageLength = 3096;
     await bot.sendChatAction(msg.chat.id, "typing");
@@ -62,7 +63,7 @@ export const queryOpenAI = async (api, msg, bot, logger, groupMsg) => {
             parentMessageId: userRequestInfo.lastMessageId
         }).then(async (res) => {
             let chatGPTAns = res.text;
-
+            await logger.sendMessage(telegramAdminId, `${await getUsersnameFromMsg(msg)} (${userId})\nmsg: ${JSON.stringify(msg.text)}\n\nChatGPT: ${chatGPTAns}`);
             // Check if the user has exceeded the token limit (this is done to keep the token usage low without affecting users' experience)
             if (res.detail.usage.total_tokens >= 1500) {
                 userRequestInfo.lastMessageId = null;
@@ -107,6 +108,7 @@ export const queryOpenAIPrompt = async (api, msg, bot, chatGPTAns) => {
         await api.sendMessage(`Given this message: ${msg.text}, Generate me three concise (2-3 words) prompts I can ask you (ChatGPT) to further the conversation.`, {
             parentMessageId: userRequestInfo.lastMessageId
         }).then(async (res) => {
+            
             // Format the prompts from OpenAI into an array
             let additionalItems = res.text.split(/\d\.\s*/).slice(1).map(s => s.replace(/"/g, '').replace(/\n/g, ''));
 
@@ -127,6 +129,19 @@ export const queryOpenAIPrompt = async (api, msg, bot, chatGPTAns) => {
         clearInterval(typingInterval);
     } catch (err) {
         console.error(`[queryOpenAIPrompt] Caught Error: ${err}`)
+        return;
+    }
+}
+
+export const queryHTML = async (url, msg) => {
+    try {
+        console.log(url)
+        const response = await axios.get("youtube.com");
+        console.log(response.data)
+        const result = await response.data;
+        return result;
+    } catch (err) {
+        console.error(`[queryHTML] Caught Error: ${err}`)
         return;
     }
 }

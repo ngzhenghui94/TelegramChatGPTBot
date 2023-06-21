@@ -7,7 +7,7 @@ import { getUserRequestInfo, getUsersnameFromMsg } from "./src/userInfo.js"
 import { rateLimit } from "./src/rateLimit.js"
 import { blobToBuffer, checkRedis, checkUserOnRedis, resetRedis } from "./src/redisUtilities.js"
 import { createSubscriptionObject, checkSubscription, removeUserFromSubscription, getAllSubscription, setSubscriptionState } from "./src/subscription.js"
-import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts, queryOpenAIPrompt } from './src/query.js'
+import { queryStableDiffusion, queryOpenAI, inlineKeyboardOpts, queryOpenAIPrompt, queryHTML } from './src/query.js'
 import { privateChatOnly } from "./src/utilities.js"
 import Jimp from "jimp"
 import fs from "fs"
@@ -35,6 +35,7 @@ const api = new ChatGPTAPI({
 const botInfo = await bot.getMe();
 const botUsername = botInfo.username;
 const botUsernameRegex = new RegExp('@' + botUsername, 'i');
+
 
 // Bot will respond to itself in Telegram Group Chat when users query it via @<BotUsername> [Message]
 bot.onText(botUsernameRegex, async (msg, parameter) => {
@@ -173,6 +174,22 @@ bot.onText(/^\/image/i, async (msg) => {
         console.error(`[/image] Caught Error: ${err}`)
     }
 })
+
+
+bot.onText(/^\/html (.+)/i, async (msg, parameter) => {
+    console.log("hey")
+    const userId = msg.chat.id;
+
+        let url = parameter[1]
+        console.log("heyy")
+        if (msg.chat.type == "private") {
+            console.log("heyyy")
+            await queryHTML(url)
+        }
+
+})
+
+
 
 
 bot.onText(/^\/reset$/i, async (msg) => {
